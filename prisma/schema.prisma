@@ -26,3 +26,18 @@ model Table {
   tableCode    String @unique
   restaurantId Int
 }
+
+enum Role {
+  OWNER
+  MANAGER
+  KITCHEN
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String
+  role         Role
+  restaurantId Int
+  createdAt    DateTime @default(now())
+}
