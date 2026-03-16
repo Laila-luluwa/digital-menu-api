@@ -1,8 +1,15 @@
 const express = require("express");
+const restaurantRoutes = require("./routes/restaurants.routes");
+const tenantMiddleware = require("./middleware/tenant.middleware");
+const menuRoutes = require("./routes/menu.routes");
 
 const app = express();
 
 app.use(express.json());
+app.use(tenantMiddleware);
+app.use("/api", menuRoutes);
+
+app.use("/api", restaurantRoutes);
 
 app.get("/", (req, res) => {
   res.send("Digital Menu API is running");
