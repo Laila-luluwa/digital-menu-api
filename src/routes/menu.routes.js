@@ -79,4 +79,40 @@ router.delete("/menu-items/:id", async (req, res) => {
   }
 });
 
+router.post("/menu-items/:id/decrement", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+
+    const result = await prisma.menuItem.updateMany({
+      where: {
+        id: id,
+        restaurantId: req.restaurantId,
+        quantity: {
+          gt: 0
+        }
+      },
+      data: {
+        quantity: {
+          decrement: 1
+        }
+      }
+    });
+
+    if (result.count === 0) {
+      return res.status(400).json({
+        error: "Item out of stock"
+      });
+    }
+
+    const item = await prisma.menuItem.findUnique({
+      where: { id: id }
+    });
+
+    res.json(item);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to decrement inventory" });
+  }
+});
 module.exports = router;
