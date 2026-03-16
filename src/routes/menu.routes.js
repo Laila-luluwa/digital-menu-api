@@ -61,4 +61,22 @@ router.patch("/menu-items/:id", async (req, res) => {
   }
 });
 
+router.delete("/menu-items/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+
+    await prisma.menuItem.delete({
+      where: {
+        id: id
+      }
+    });
+
+    res.json({ message: "Menu item deleted successfully" });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete menu item" });
+  }
+});
+
 module.exports = router;
