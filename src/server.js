@@ -1,9 +1,9 @@
-const express = require("express");
-const restaurantRoutes = require("./routes/restaurants.routes");
-const tenantMiddleware = require("./middleware/tenant.middleware");
-const menuRoutes = require("./routes/menu.routes");
-const tableRoutes = require("./routes/tables.routes");
-const userRoutes = require("./routes/users.routes");
+import express from "express";
+import restaurantRoutes from "./routes/restaurants.routes.js";
+import tenantMiddleware from "./middleware/tenant.middleware.js";
+import menuRoutes from "./routes/menu.routes.js";
+import tableRoutes from "./routes/tables.routes.js";
+import userRoutes from "./routes/users.routes.js";
 
 const app = express();
 
@@ -13,6 +13,7 @@ app.use("/api", menuRoutes);
 app.use("/api", tableRoutes);
 app.use("/api", restaurantRoutes);
 app.use("/api", userRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("Digital Menu API is running");

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const prisma = require("../prismaClient");
+import prisma from "../prismaClient.js";
 
 
 // Получить все рестораны
@@ -32,3 +32,19 @@ router.post("/restaurants", async (req, res) => {
 });
 
 module.exports = router;
+
+function tenantMiddleware(req, res, next) {
+  const restaurantId = req.headers["x-restaurant-id"];
+
+  if (!restaurantId) {
+    return res.status(400).json({
+      error: "Restaurant ID is required in x-restaurant-id header"
+    });
+  }
+
+  // сохраняем restaurantId в request
+  req.restaurantId = parseInt(restaurantId);
+
+  next();
+}
+module.exports = tenantMiddleware;

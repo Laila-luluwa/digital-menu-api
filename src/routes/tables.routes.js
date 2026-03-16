@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const prisma = require("../prismaClient");
+import prisma from "../prismaClient.js";
 
-// создать стол + QR ссылку
+
 router.post("/tables", async (req, res) => {
   try {
 
