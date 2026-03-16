@@ -1,38 +1,41 @@
-// Контроллер для оформления заказов
 export const createOrder = async (req, res) => {
-  // Данные приходят из Body (список блюд)
-  const { items, total_price } = req.body;
-  
-  // Токен мы берем из заголовков (он там уже проверен middleware)
+  const { items } = req.body;
   const sessionToken = req.headers['x-session-token'];
 
-  if (!items || items.length === 0) {
-    return res.status(400).json({ error: "Корзина пуста!" });
-  }
-
   try {
-    console.log(`[Order] Получен заказ от сессии: ${sessionToken}`);
-    console.log(`[Items]`, items);
+    // 1. Имитируем расчет стоимости (в будущем это будет из БД)
+    // Допустим, каждый товар в среднем стоит 2000 тенге
+    const itemPrice = 2000; 
+    const totalAmount = items.reduce((sum, item) => sum + (item.qty * itemPrice), 0);
 
-    /* ГОРЯЧАЯ ТОЧКА (Hard Part): 
-       Здесь мы вызываем логику напарницы. 
-       Она должна обернуть это в ТРАНЗАКЦИЮ:
-       1. Создать запись в таблице orders.
-       2. Для каждого item уменьшить quantity в таблице inventory.
-       3. Если на складе 0 — отменить всю транзакцию (Rollback).
-    */
+    // 2. Рассчитываем примерное время ожидания
+    // Например: 10 минут база + 5 минут на каждый товар
+    const estimatedTime = 10 + (items.length * 5);
 
-    // Имитируем успешное создание заказа
-    const orderId = Math.floor(Math.random() * 10000);
+    // 3. Генерируем ID заказа
+    const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
 
+    console.log(`[Order] Заказ ${orderId} создан для сессии ${sessionToken}`);
+
+    // Возвращаем гостю "Цифровой чек"
     res.status(201).json({
       success: true,
-      message: "Заказ принят! Кухня уже начала готовить.",
-      order_id: orderId,
-      status: "queued"
+      message: "Заказ успешно оформлен!",
+      order_details: {
+        id: orderId,
+        status: "preparing", // Статус: Готовится
+        items_count: items.length,
+        total_amount: totalAmount,
+        currency: "KZT",
+        wait_time_estimate: `${estimatedTime} min`
+      }
     });
 
   } catch (error) {
-    res.status(500).json({ error: "Ошибка при создании заказа" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Ошибка при обработке чека", 
+      error: error.message 
+    });
   }
 };
