@@ -12,3 +12,11 @@ model Restaurant {
   name      String
   createdAt DateTime @default(now())
 }
+
+model MenuItem {
+  id           Int    @id @default(autoincrement())
+  name         String
+  price        Float
+  quantity     Int
+  restaurantId Int
+}

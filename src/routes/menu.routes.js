@@ -13,6 +13,7 @@ router.get("/menu-items", async (req, res) => {
 
     res.json(items);
   } catch (error) {
+    console.error("MENU ERROR:", error);  // ← добавь это
     res.status(500).json({ error: "Failed to fetch menu items" });
   }
 });
