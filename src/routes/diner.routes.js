@@ -1,15 +1,11 @@
 import express from 'express';
-import { getMenu } from '../controllers/diner/menu.controller.js';
-import { startSession } from '../controllers/diner/session.controller.js';
-import { createOrder } from '../controllers/diner/order.controller.js'; // Импорт
+import { createOrder } from '../controllers/diner/order.controller.js';
 import { validateSession } from '../middleware/validateSession.js';
+import { validateRequest } from '../middleware/validateRequest.js'; // Используем её название
 
 const router = express.Router();
 
-router.post('/sessions/start', startSession);
-router.get('/menu', validateSession, getMenu);
-
-// НОВЫЙ РОУТ: Оформление заказа
-router.post('/orders', validateSession, createOrder);
+// Применяем проверку перед созданием заказа
+router.post('/orders', validateSession, validateRequest, createOrder);
 
 export default router;
