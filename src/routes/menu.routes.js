@@ -38,4 +38,27 @@ router.post("/menu-items", async (req, res) => {
   }
 });
 
+router.patch("/menu-items/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { name, price, quantity } = req.body;
+
+    const updatedItem = await prisma.menuItem.update({
+      where: {
+        id: id
+      },
+      data: {
+        name,
+        price,
+        quantity
+      }
+    });
+
+    res.json(updatedItem);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to update menu item" });
+  }
+});
+
 module.exports = router;
