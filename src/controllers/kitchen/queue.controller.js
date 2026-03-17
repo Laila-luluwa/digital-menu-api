@@ -1,42 +1,59 @@
-import prisma from '../../../prisma/client.js';
+import prisma from "../../prismaClient.js";
 
-// 1. Получить все активные заказы (которые еще не поданы)
+const ACTIVE_STATUSES = ["QUEUED", "COOKING", "READY"];
+const ALL_STATUSES = ["QUEUED", "COOKING", "READY", "SERVED"];
+
 export const getActiveOrders = async (req, res) => {
   try {
     const orders = await prisma.order.findMany({
       where: {
-        status: { in: ['queued', 'cooking', 'ready'] } // Игнорируем завершенные 'served'
+        restaurantId: req.restaurantId,
+        status: { in: ACTIVE_STATUSES }
       },
       include: {
-        items: {
-          include: { menuItem: true } // Чтобы повар видел название блюда, а не просто ID
-        }
+        items: { include: { menuItem: true } }
       },
-      orderBy: { createdAt: 'asc' } // Сначала самые старые (первым пришел — первым обслужен)
+      orderBy: { createdAt: "asc" }
     });
+
     res.json(orders);
   } catch (error) {
-    res.status(500).json({ error: "Не удалось загрузить заказы для кухни" });
+    res.status(500).json({ error: "Failed to load kitchen orders" });
   }
 };
 
-// 2. Изменить статус заказа (например, с 'queued' на 'cooking')
 export const updateOrderStatus = async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body; // Ожидаем: 'cooking', 'ready' или 'served'
+  const { status } = req.body;
+  const nextStatus = String(status || "").toUpperCase();
+
+  if (!ALL_STATUSES.includes(nextStatus)) {
+    return res.status(400).json({ error: "Invalid status" });
+  }
 
   try {
-    const updatedOrder = await prisma.order.update({
-      where: { id: Number(id) },
-      data: { status }
+    const result = await prisma.order.updateMany({
+      where: {
+        id: Number(id),
+        restaurantId: req.restaurantId
+      },
+      data: { status: nextStatus }
+    });
+
+    if (result.count === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    const updatedOrder = await prisma.order.findUnique({
+      where: { id: Number(id) }
     });
 
     res.json({
       success: true,
-      message: `Статус заказа #${id} изменен на ${status}`,
+      message: `Order #${id} status updated to ${nextStatus}`,
       order: updatedOrder
     });
   } catch (error) {
-    res.status(400).json({ error: "Ошибка при обновлении статуса. Проверь ID заказа." });
+    res.status(400).json({ error: "Failed to update order status" });
   }
 };

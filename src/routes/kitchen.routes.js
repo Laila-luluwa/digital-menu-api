@@ -1,12 +1,15 @@
-import express from 'express';
-import { getActiveOrders, updateOrderStatus } from '../controllers/kitchen/queue.controller.js';
+import express from "express";
+import { getActiveOrders, updateOrderStatus } from "../controllers/kitchen/queue.controller.js";
+import tenantMiddleware from "../middleware/tenant.middleware.js";
 
 const router = express.Router();
 
-// Маршрут для получения очереди заказов
-router.get('/orders', getActiveOrders);
+router.use(tenantMiddleware);
 
-// Маршрут для смены статуса конкретного заказа
-router.patch('/orders/:id/status', updateOrderStatus);
+// Queue for kitchen
+router.get("/orders", getActiveOrders);
+
+// Update order status
+router.patch("/orders/:id/status", updateOrderStatus);
 
 export default router;

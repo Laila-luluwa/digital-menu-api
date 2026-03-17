@@ -2,29 +2,29 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('РќР°С‡РёРЅР°СЋ Р·Р°РїРѕР»РЅРµРЅРёРµ Р±Р°Р·С‹ РґР°РЅРЅС‹С…...')
+  console.log('Начинаю заполнение базы данных...')
 
-  // 1. РЎРѕР·РґР°РµРј СЂРµСЃС‚РѕСЂР°РЅ (РЅСѓР¶РµРЅ РґР»СЏ СЃРІСЏР·Рё СЃ Р±Р»СЋРґР°РјРё Рё СЃС‚РѕР»Р°РјРё)
   const restaurant = await prisma.restaurant.create({
     data: {
       name: "Asanali's Digital Cafe",
     },
   })
 
-  // 2. Р”РѕР±Р°РІР»СЏРµРј РїРѕРїСѓР»СЏСЂРЅС‹Рµ РїРѕР·РёС†РёРё РІ РјРµРЅСЋ
   const items = [
-    { name: 'Р‘СѓСЂРіРµСЂ "РљР»Р°СЃСЃРёРєР°"', price: 2200, quantity: 40, restaurantId: restaurant.id },
-    { name: 'РџРёС†С†Р° РњР°СЂРіР°СЂРёС‚Р°', price: 3500, quantity: 25, restaurantId: restaurant.id },
-    { name: 'РљР°СЂС‚РѕС„РµР»СЊ С„СЂРё', price: 950, quantity: 60, restaurantId: restaurant.id },
-    { name: 'РљРѕРєР°-РєРѕР»Р° 0.5', price: 600, quantity: 100, restaurantId: restaurant.id },
-    { name: 'Р§РёР·РєРµР№Рє', price: 1800, quantity: 15, restaurantId: restaurant.id },
+    { name: 'Бургер "Классика"', price: 2200, quantity: 40, restaurantId: restaurant.id },
+    { name: 'Пицца Маргарита', price: 3500, quantity: 25, restaurantId: restaurant.id },
+    { name: 'Картофель фри', price: 950, quantity: 60, restaurantId: restaurant.id },
+    { name: 'Кока-кола 0.5', price: 600, quantity: 100, restaurantId: restaurant.id },
+    { name: 'Чизкейк', price: 1800, quantity: 15, restaurantId: restaurant.id },
   ]
 
   for (const item of items) {
-    await prisma.menuItem.create({ data: item })
+    const menuItem = await prisma.menuItem.create({ data: item })
+    await prisma.inventory.create({
+      data: { menuItemId: menuItem.id, quantityAvailable: item.quantity }
+    })
   }
 
-  // 3. РЎРѕР·РґР°РµРј РЅРµСЃРєРѕР»СЊРєРѕ СЃС‚РѕР»РѕРІ СЃ QR-РєРѕРґР°РјРё
   await prisma.table.createMany({
     data: [
       { tableCode: 'TABLE-01', restaurantId: restaurant.id },
@@ -33,7 +33,7 @@ async function main() {
     ],
   })
 
-  console.log('вњ… Р‘Р°Р·Р° СѓСЃРїРµС€РЅРѕ РЅР°РїРѕР»РЅРµРЅР°: 1 СЂРµСЃС‚РѕСЂР°РЅ, 5 Р±Р»СЋРґ, 3 СЃС‚РѕР»Р°.')
+  console.log('База успешно наполнена: 1 ресторан, 5 блюд, 3 стола.')
 }
 
 main()

@@ -7,10 +7,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  OWNER
+  MANAGER
+  KITCHEN
+}
+
+enum OrderStatus {
+  QUEUED
+  COOKING
+  READY
+  SERVED
+}
+
+enum SessionStatus {
+  ACTIVE
+  EXPIRED
+}
+
 model Restaurant {
   id        Int      @id @default(autoincrement())
   name      String
   createdAt DateTime @default(now())
+
+  menuItems MenuItem[]
+  tables    Table[]
+  users     User[]
+  orders    Order[]
+  tags      Tag[]
+  restaurantUsers RestaurantUser[]
 }
 
 model MenuItem {
@@ -19,19 +44,22 @@ model MenuItem {
   price        Float
   quantity     Int
   restaurantId Int
+
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
   orderItems   OrderItem[]
+  inventory    Inventory?
+  tags         MenuItemTag[]
 }
 
 model Table {
-  id           Int    @id @default(autoincrement())
-  tableCode    String @unique
+  id           Int      @id @default(autoincrement())
+  tableCode    String
   restaurantId Int
-}
 
-enum Role {
-  OWNER
-  MANAGER
-  KITCHEN
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id])
+  sessions     TableSession[]
+
+  @@unique([restaurantId, tableCode])
 }
 
 model User {
@@ -41,23 +69,88 @@ model User {
   role         Role
   restaurantId Int
   createdAt    DateTime @default(now())
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantUsers RestaurantUser[]
 }
 
 model Order {
   id           Int         @id @default(autoincrement())
-  tableCode    String // К какому столу привязан заказ
-  restaurantId Int // ID ресторана
+  tableCode    String
+  restaurantId Int
   totalPrice   Float       @default(0)
-  status       String      @default("queued") // queued, cooking, ready, served
+  status       OrderStatus @default(QUEUED)
   createdAt    DateTime    @default(now())
-  items        OrderItem[] // Связь с конкретными позициями в заказе
+
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  items        OrderItem[]
+  sessionId    Int
+  session      TableSession @relation(fields: [sessionId], references: [id])
 }
 
 model OrderItem {
-  id         Int      @id @default(autoincrement())
-  orderId    Int
-  order      Order    @relation(fields: [orderId], references: [id])
+  id            Int      @id @default(autoincrement())
+  orderId       Int
+  menuItemId    Int
+  quantity      Int
+  priceSnapshot Float
+
+  order         Order    @relation(fields: [orderId], references: [id])
+  menuItem      MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model TableSession {
+  id        Int          @id @default(autoincrement())
+  tableId   Int
+  table     Table        @relation(fields: [tableId], references: [id])
+  token     String       @unique @default(uuid())
+  createdAt DateTime     @default(now())
+  expiresAt DateTime
+  status    SessionStatus @default(ACTIVE)
+
+  orders    Order[]
+}
+
+model RestaurantUser {
+  id           Int  @id @default(autoincrement())
+  restaurantId Int
+  userId       Int
+  role         Role
+  createdAt    DateTime @default(now())
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+
+  @@unique([restaurantId, userId])
+}
+
+model Tag {
+  id           Int    @id @default(autoincrement())
+  name         String
+  restaurantId Int
+
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  menuItems    MenuItemTag[]
+
+  @@unique([restaurantId, name])
+}
+
+model MenuItemTag {
+  id        Int @id @default(autoincrement())
   menuItemId Int
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-  quantity   Int
+  tagId     Int
+
+  menuItem  MenuItem @relation(fields: [menuItemId], references: [id])
+  tag       Tag      @relation(fields: [tagId], references: [id])
+
+  @@unique([menuItemId, tagId])
+}
+
+model Inventory {
+  id                Int @id @default(autoincrement())
+  menuItemId        Int @unique
+  quantityAvailable Int
+  updatedAt         DateTime @updatedAt
+
+  menuItem          MenuItem @relation(fields: [menuItemId], references: [id])
 }

@@ -1,19 +1,23 @@
 import express from "express";
+import dinerRoutes from "./routes/diner.routes.js";
+import kitchenRoutes from "./routes/kitchen.routes.js";
 import restaurantRoutes from "./routes/restaurants.routes.js";
-import tenantMiddleware from "./middleware/tenant.middleware.js";
 import menuRoutes from "./routes/menu.routes.js";
 import tableRoutes from "./routes/tables.routes.js";
 import userRoutes from "./routes/users.routes.js";
+import tenantMiddleware from "./middleware/tenant.middleware.js";
 
 const app = express();
 
 app.use(express.json());
-app.use(tenantMiddleware);
-app.use("/api", menuRoutes);
-app.use("/api", tableRoutes);
-app.use("/api", restaurantRoutes);
-app.use("/api", userRoutes);
 
+app.use("/api/diner", dinerRoutes);
+app.use("/api/kitchen", kitchenRoutes);
+
+app.use("/api", restaurantRoutes);
+app.use("/api", tenantMiddleware, menuRoutes);
+app.use("/api", tenantMiddleware, tableRoutes);
+app.use("/api", tenantMiddleware, userRoutes);
 
 app.get("/", (req, res) => {
   res.send("Digital Menu API is running");
