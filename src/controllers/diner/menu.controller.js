@@ -1,16 +1,37 @@
-import prisma from '../../../prisma/client.js'; // Путь к её файлу с Prisma
+import prisma from "../../prismaClient.js";
 
 export const getMenu = async (req, res) => {
   try {
-    // Достаем все блюда, которые есть в наличии (quantity > 0)
+    const diet = req.query.diet;
+    const dietList = diet
+      ? String(diet)
+          .split(",")
+          .map((d) => d.trim())
+          .filter(Boolean)
+      : [];
+
     const menu = await prisma.menuItem.findMany({
       where: {
-        quantity: { gt: 0 } 
+        restaurantId: req.restaurantId,
+        inventory: { quantityAvailable: { gt: 0 } },
+        ...(dietList.length
+          ? {
+              tags: {
+                some: {
+                  tag: { name: { in: dietList } }
+                }
+              }
+            }
+          : {})
+      },
+      include: {
+        inventory: true,
+        tags: { include: { tag: true } }
       }
     });
 
     res.json(menu);
   } catch (error) {
-    res.status(500).json({ error: "Не удалось загрузить меню из базы" });
+    res.status(500).json({ error: "Failed to load menu." });
   }
 };

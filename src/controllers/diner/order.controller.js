@@ -1,57 +1,85 @@
-import prisma from '../../../prisma/client.js';
+import prisma from "../../prismaClient.js";
 
 export const createOrder = async (req, res) => {
-  const { items, tableCode, restaurantId } = req.body;
+  const { items } = req.body;
 
   try {
+    const session = req.session;
+    const restaurantId = req.restaurantId;
+    const tableCode = session.table.tableCode;
+
     const newOrder = await prisma.$transaction(async (tx) => {
       let total = 0;
 
-      // 1. Создаем запись самого заказа
       const order = await tx.order.create({
         data: {
           tableCode,
           restaurantId,
-          totalPrice: 0, // Посчитаем ниже
+          sessionId: session.id,
+          totalPrice: 0
         }
       });
 
-      // 2. Обрабатываем каждое блюдо
       for (const item of items) {
-        const dish = await tx.menuItem.findUnique({ where: { id: item.item_id } });
+        const itemId =
+          item.item_id || item.menu_item_id || item.menuItemId || item.id;
+        const qty = Number(item.qty);
 
-        if (!dish || dish.quantity < item.qty) {
-          throw new Error(`Недостаточно товара: ${dish?.name || 'ID ' + item.item_id}`);
+        if (!itemId || !Number.isFinite(qty) || qty <= 0) {
+          throw new Error("Invalid order item payload");
         }
 
-        // Списываем со склада
-        await tx.menuItem.update({
-          where: { id: item.item_id },
-          data: { quantity: { decrement: item.qty } }
+        const dish = await tx.menuItem.findFirst({
+          where: {
+            id: Number(itemId),
+            restaurantId
+          },
+          include: { inventory: true }
         });
 
-        // Создаем запись в OrderItem
-        await tx.orderItem.create({
+        if (!dish || !dish.inventory) {
+          throw new Error(`Menu item not found: ${itemId}`);
+        }
+
+        const updated = await tx.inventory.updateMany({
+          where: {
+            menuItemId: dish.id,
+            quantityAvailable: { gte: qty }
+          },
           data: {
-            orderId: order.id,
-            menuItemId: item.item_id,
-            quantity: item.qty
+            quantityAvailable: { decrement: qty }
           }
         });
 
-        total += dish.price * item.qty;
+        if (updated.count === 0) {
+          throw new Error(`Out of stock: ${dish.name}`);
+        }
+
+        await tx.menuItem.updateMany({
+          where: { id: dish.id, restaurantId },
+          data: { quantity: { decrement: qty } }
+        });
+
+        await tx.orderItem.create({
+          data: {
+            orderId: order.id,
+            menuItemId: dish.id,
+            quantity: qty,
+            priceSnapshot: dish.price
+          }
+        });
+
+        total += dish.price * qty;
       }
 
-      // 3. Обновляем итоговую сумму в заказе
       return await tx.order.update({
         where: { id: order.id },
         data: { totalPrice: total },
-        include: { items: true } // Вернем заказ вместе с позициями
+        include: { items: true }
       });
     });
 
     res.status(201).json({ success: true, order: newOrder });
-
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }

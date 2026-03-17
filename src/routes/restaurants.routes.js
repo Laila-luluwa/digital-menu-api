@@ -1,9 +1,9 @@
-const express = require("express");
-const router = express.Router();
+import express from "express";
 import prisma from "../prismaClient.js";
 
+const router = express.Router();
 
-// –ü–æ–ª—É—á–∏—Ç—å –≤—Å–µ —Ä–µ—Å—Ç–æ—Ä–∞–Ω—ã
+// œÓÎÛ˜ËÚ¸ ‚ÒÂ ÂÒÚÓ‡Ì˚
 router.get("/restaurants", async (req, res) => {
   try {
     const restaurants = await prisma.restaurant.findMany();
@@ -13,16 +13,13 @@ router.get("/restaurants", async (req, res) => {
   }
 });
 
-
-// –°–æ–∑–¥–∞—Ç—å —Ä–µ—Å—Ç–æ—Ä–∞–Ω
+// —ÓÁ‰‡Ú¸ ÂÒÚÓ‡Ì
 router.post("/restaurants", async (req, res) => {
   try {
     const { name } = req.body;
 
     const restaurant = await prisma.restaurant.create({
-      data: {
-        name: name
-      }
+      data: { name }
     });
 
     res.json(restaurant);
@@ -31,20 +28,4 @@ router.post("/restaurants", async (req, res) => {
   }
 });
 
-module.exports = router;
-
-function tenantMiddleware(req, res, next) {
-  const restaurantId = req.headers["x-restaurant-id"];
-
-  if (!restaurantId) {
-    return res.status(400).json({
-      error: "Restaurant ID is required in x-restaurant-id header"
-    });
-  }
-
-  // —Å–æ—Ö—Ä–∞–Ω—è–µ–º restaurantId –≤ request
-  req.restaurantId = parseInt(restaurantId);
-
-  next();
-}
-module.exports = tenantMiddleware;
+export default router;

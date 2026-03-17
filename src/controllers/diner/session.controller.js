@@ -1,36 +1,50 @@
-import { v4 as uuidv4 } from 'uuid';
+import prisma from "../../prismaClient.js";
 
-// Контроллер для создания сессии гостя при сканировании QR
 export const startSession = async (req, res) => {
-  const { table_code } = req.body;
+  const tableCode = req.query.table_code || req.body?.table_code || req.body?.tableCode;
+  const restaurantIdHeader = req.headers["x-restaurant-id"];
+  const restaurantIdQuery = req.query.restaurant_id || req.body?.restaurant_id;
+  const restaurantId = restaurantIdHeader || restaurantIdQuery;
 
-  if (!table_code) {
-    return res.status(400).json({ 
-      success: false, 
-      message: "Table code is required (сканируй QR заново)" 
-    });
+  if (!tableCode) {
+    return res.status(400).json({ error: "table_code is required" });
   }
 
   try {
-    // Генерируем уникальный токен сессии
-    const sessionToken = uuidv4();
+    const restaurantFilter = restaurantId
+      ? { restaurantId: Number(restaurantId) }
+      : {};
 
-    // Устанавливаем время жизни сессии (например, 2 часа от текущего момента)
+    if (restaurantId && Number.isNaN(restaurantFilter.restaurantId)) {
+      return res.status(400).json({ error: "restaurant_id must be a number" });
+    }
+
+    const table = await prisma.table.findFirst({
+      where: {
+        tableCode: String(tableCode),
+        ...restaurantFilter
+      }
+    });
+
+    if (!table) {
+      return res.status(404).json({ error: "Table not found" });
+    }
+
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 2);
 
-    /* ПОДСКАЗКА ДЛЯ НАПАРНИЦЫ:
-       Когда база будет готова, здесь нужно будет сделать:
-       await prisma.table_sessions.create({ data: { ... } })
-    */
+    const session = await prisma.tableSession.create({
+      data: {
+        tableId: table.id,
+        expiresAt
+      }
+    });
 
     res.status(201).json({
-      success: true,
-      token: sessionToken,
-      table_code: table_code,
-      expiresAt: expiresAt
+      token: session.token,
+      expiresAt: session.expiresAt
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: "Failed to create session" });
   }
 };
