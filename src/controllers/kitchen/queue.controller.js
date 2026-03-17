@@ -1,25 +1,42 @@
-// Имитируем базу заказов
-let orders = [
-  { id: 101, table: "STOL_01", items: [{ name: "Burger", qty: 2 }], status: "queued" },
-  { id: 102, table: "STOL_05", items: [{ name: "Salad", qty: 1 }], status: "cooking" }
-];
+import prisma from '../../../prisma/client.js';
 
-// 1. Получить список всех активных заказов
+// 1. Получить все активные заказы (которые еще не поданы)
 export const getActiveOrders = async (req, res) => {
-  // В будущем тут будет: prisma.orders.findMany({ where: { status: { not: 'served' } } })
-  res.status(200).json(orders);
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        status: { in: ['queued', 'cooking', 'ready'] } // Игнорируем завершенные 'served'
+      },
+      include: {
+        items: {
+          include: { menuItem: true } // Чтобы повар видел название блюда, а не просто ID
+        }
+      },
+      orderBy: { createdAt: 'asc' } // Сначала самые старые (первым пришел — первым обслужен)
+    });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: "Не удалось загрузить заказы для кухни" });
+  }
 };
 
-// 2. Изменить статус заказа (Hard Part: Status Machine)
+// 2. Изменить статус заказа (например, с 'queued' на 'cooking')
 export const updateOrderStatus = async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body; // например, 'cooking' или 'ready'
+  const { status } = req.body; // Ожидаем: 'cooking', 'ready' или 'served'
 
-  const order = orders.find(o => o.id === parseInt(id));
-  if (!order) return res.status(404).json({ error: "Заказ не найден" });
+  try {
+    const updatedOrder = await prisma.order.update({
+      where: { id: Number(id) },
+      data: { status }
+    });
 
-  order.status = status;
-  console.log(`[Kitchen] Заказ ${id} теперь в статусе: ${status}`);
-
-  res.status(200).json({ message: `Статус обновлен на ${status}`, order });
+    res.json({
+      success: true,
+      message: `Статус заказа #${id} изменен на ${status}`,
+      order: updatedOrder
+    });
+  } catch (error) {
+    res.status(400).json({ error: "Ошибка при обновлении статуса. Проверь ID заказа." });
+  }
 };

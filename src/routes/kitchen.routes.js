@@ -3,7 +3,10 @@ import { getActiveOrders, updateOrderStatus } from '../controllers/kitchen/queue
 
 const router = express.Router();
 
-router.get('/orders', getActiveOrders);          // Список заказов для повара
-router.patch('/orders/:id/status', updateOrderStatus); // Изменение статуса (повар нажал кнопку)
+// Маршрут для получения очереди заказов
+router.get('/orders', getActiveOrders);
+
+// Маршрут для смены статуса конкретного заказа
+router.patch('/orders/:id/status', updateOrderStatus);
 
 export default router;

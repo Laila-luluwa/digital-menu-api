@@ -1,38 +1,58 @@
-// Контроллер для оформления заказов
-export const createOrder = async (req, res) => {
-  // Данные приходят из Body (список блюд)
-  const { items, total_price } = req.body;
-  
-  // Токен мы берем из заголовков (он там уже проверен middleware)
-  const sessionToken = req.headers['x-session-token'];
+import prisma from '../../../prisma/client.js';
 
-  if (!items || items.length === 0) {
-    return res.status(400).json({ error: "Корзина пуста!" });
-  }
+export const createOrder = async (req, res) => {
+  const { items, tableCode, restaurantId } = req.body;
 
   try {
-    console.log(`[Order] Получен заказ от сессии: ${sessionToken}`);
-    console.log(`[Items]`, items);
+    const newOrder = await prisma.$transaction(async (tx) => {
+      let total = 0;
 
-    /* ГОРЯЧАЯ ТОЧКА (Hard Part): 
-       Здесь мы вызываем логику напарницы. 
-       Она должна обернуть это в ТРАНЗАКЦИЮ:
-       1. Создать запись в таблице orders.
-       2. Для каждого item уменьшить quantity в таблице inventory.
-       3. Если на складе 0 — отменить всю транзакцию (Rollback).
-    */
+      // 1. Создаем запись самого заказа
+      const order = await tx.order.create({
+        data: {
+          tableCode,
+          restaurantId,
+          totalPrice: 0, // Посчитаем ниже
+        }
+      });
 
-    // Имитируем успешное создание заказа
-    const orderId = Math.floor(Math.random() * 10000);
+      // 2. Обрабатываем каждое блюдо
+      for (const item of items) {
+        const dish = await tx.menuItem.findUnique({ where: { id: item.item_id } });
 
-    res.status(201).json({
-      success: true,
-      message: "Заказ принят! Кухня уже начала готовить.",
-      order_id: orderId,
-      status: "queued"
+        if (!dish || dish.quantity < item.qty) {
+          throw new Error(`Недостаточно товара: ${dish?.name || 'ID ' + item.item_id}`);
+        }
+
+        // Списываем со склада
+        await tx.menuItem.update({
+          where: { id: item.item_id },
+          data: { quantity: { decrement: item.qty } }
+        });
+
+        // Создаем запись в OrderItem
+        await tx.orderItem.create({
+          data: {
+            orderId: order.id,
+            menuItemId: item.item_id,
+            quantity: item.qty
+          }
+        });
+
+        total += dish.price * item.qty;
+      }
+
+      // 3. Обновляем итоговую сумму в заказе
+      return await tx.order.update({
+        where: { id: order.id },
+        data: { totalPrice: total },
+        include: { items: true } // Вернем заказ вместе с позициями
+      });
     });
 
+    res.status(201).json({ success: true, order: newOrder });
+
   } catch (error) {
-    res.status(500).json({ error: "Ошибка при создании заказа" });
+    res.status(400).json({ success: false, error: error.message });
   }
 };

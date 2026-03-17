@@ -1,13 +1,16 @@
-// Контроллер для работы гостя с меню
-export const getMenu = async (req, res) => {
-  // Имитируем данные из базы
-  const mockMenu = [
-    { id: 1, name: "Burger", price: 2500, tags: ["meat"] },
-    { id: 2, name: "Vegan Salad", price: 1800, tags: ["vegan"] }
-  ];
+import prisma from '../../../prisma/client.js'; // Путь к её файлу с Prisma
 
-  res.status(200).json({
-    restaurant_id: req.query.restaurant_id || 1,
-    items: mockMenu
-  });
+export const getMenu = async (req, res) => {
+  try {
+    // Достаем все блюда, которые есть в наличии (quantity > 0)
+    const menu = await prisma.menuItem.findMany({
+      where: {
+        quantity: { gt: 0 } 
+      }
+    });
+
+    res.json(menu);
+  } catch (error) {
+    res.status(500).json({ error: "Не удалось загрузить меню из базы" });
+  }
 };

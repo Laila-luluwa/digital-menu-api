@@ -14,11 +14,12 @@ model Restaurant {
 }
 
 model MenuItem {
-  id           Int    @id @default(autoincrement())
+  id           Int         @id @default(autoincrement())
   name         String
   price        Float
   quantity     Int
   restaurantId Int
+  orderItems   OrderItem[]
 }
 
 model Table {
@@ -40,4 +41,23 @@ model User {
   role         Role
   restaurantId Int
   createdAt    DateTime @default(now())
+}
+
+model Order {
+  id           Int         @id @default(autoincrement())
+  tableCode    String // К какому столу привязан заказ
+  restaurantId Int // ID ресторана
+  totalPrice   Float       @default(0)
+  status       String      @default("queued") // queued, cooking, ready, served
+  createdAt    DateTime    @default(now())
+  items        OrderItem[] // Связь с конкретными позициями в заказе
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  orderId    Int
+  order      Order    @relation(fields: [orderId], references: [id])
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity   Int
 }
