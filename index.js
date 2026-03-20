@@ -3,11 +3,12 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import dinerRoutes from './src/routes/diner.routes.js';
 import kitchenRoutes from './src/routes/kitchen.routes.js';
+import authRoutes from './src/routes/auth.routes.js';
 import restaurantRoutes from './src/routes/restaurants.routes.js';
 import menuRoutes from './src/routes/menu.routes.js';
 import tableRoutes from './src/routes/tables.routes.js';
 import userRoutes from './src/routes/users.routes.js';
-import tenantMiddleware from './src/middleware/tenant.middleware.js';
+import { validateJWT } from './src/middleware/validateJWT.js';
 
 dotenv.config();
 
@@ -18,19 +19,30 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Public diner flow
+// ============================================
+// PUBLIC ROUTES (БЕЗ защиты)
+// ============================================
+// Authentication routes
+app.use('/api/auth', authRoutes);
+
+// Public diner flow (uses session tokens, not JWT)
 app.use('/api/diner', dinerRoutes);
 
-// Kitchen flow (tenant-scoped via middleware in router)
-app.use('/api/kitchen', kitchenRoutes);
+// ============================================
+// PROTECTED ROUTES (требуют JWT)
+// ============================================
+// Kitchen queue
+app.use('/api/kitchen', validateJWT, kitchenRoutes);
 
-// Tenant admin routes
-app.use('/api', restaurantRoutes);
-app.use('/api', tenantMiddleware, menuRoutes);
-app.use('/api', tenantMiddleware, tableRoutes);
-app.use('/api', tenantMiddleware, userRoutes);
+// Admin/Staff management routes
+app.use('/api', validateJWT, restaurantRoutes);
+app.use('/api', validateJWT, menuRoutes);
+app.use('/api', validateJWT, tableRoutes);
+app.use('/api', validateJWT, userRoutes);
 
-// Health check
+// ============================================
+// HEALTH CHECK
+// ============================================
 app.get('/', (req, res) => {
   res.send('API is running');
 });
