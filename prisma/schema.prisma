@@ -31,6 +31,7 @@ model Restaurant {
   createdAt DateTime @default(now())
 
   menuItems MenuItem[]
+  menuCategories MenuCategory[]
   tables    Table[]
   users     User[]
   orders    Order[]
@@ -38,14 +39,31 @@ model Restaurant {
   restaurantUsers RestaurantUser[]
 }
 
+model MenuCategory {
+  id           Int         @id @default(autoincrement())
+  name         String
+  restaurantId Int
+  description  String?
+  displayOrder Int         @default(0)
+  createdAt    DateTime    @default(now())
+
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  menuItems    MenuItem[]
+
+  @@unique([restaurantId, name])
+}
+
 model MenuItem {
   id           Int         @id @default(autoincrement())
   name         String
+  description  String?
   price        Float
   quantity     Int
   restaurantId Int
+  categoryId   Int?
 
   restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  category     MenuCategory? @relation(fields: [categoryId], references: [id])
   orderItems   OrderItem[]
   inventory    Inventory?
   tags         MenuItemTag[]

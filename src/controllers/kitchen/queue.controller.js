@@ -1,4 +1,5 @@
 import prisma from "../../prismaClient.js";
+import { notificationService } from "../../services/notification.service.js";
 
 const ACTIVE_STATUSES = ["QUEUED", "COOKING", "READY"];
 const ALL_STATUSES = ["QUEUED", "COOKING", "READY", "SERVED"];
@@ -11,13 +12,15 @@ export const getActiveOrders = async (req, res) => {
         status: { in: ACTIVE_STATUSES }
       },
       include: {
-        items: { include: { menuItem: true } }
+        items: { include: { menuItem: true } },
+        session: { include: { table: true } }
       },
       orderBy: { createdAt: "asc" }
     });
 
     res.json(orders);
   } catch (error) {
+    console.error("Failed to load kitchen orders:", error);
     res.status(500).json({ error: "Failed to load kitchen orders" });
   }
 };
@@ -28,7 +31,7 @@ export const updateOrderStatus = async (req, res) => {
   const nextStatus = String(status || "").toUpperCase();
 
   if (!ALL_STATUSES.includes(nextStatus)) {
-    return res.status(400).json({ error: "Invalid status" });
+    return res.status(400).json({ error: "Invalid status. Valid statuses: QUEUED, COOKING, READY, SERVED" });
   }
 
   try {
@@ -45,8 +48,19 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     const updatedOrder = await prisma.order.findUnique({
-      where: { id: Number(id) }
+      where: { id: Number(id) },
+      include: {
+        items: { include: { menuItem: true } },
+        session: { include: { table: true } }
+      }
     });
+
+    // Broadcast order status update to kitchen staff
+    notificationService.broadcastOrderStatusUpdate(
+      req.restaurantId,
+      Number(id),
+      nextStatus
+    );
 
     res.json({
       success: true,
@@ -54,6 +68,7 @@ export const updateOrderStatus = async (req, res) => {
       order: updatedOrder
     });
   } catch (error) {
+    console.error("Failed to update order status:", error);
     res.status(400).json({ error: "Failed to update order status" });
   }
 };

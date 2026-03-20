@@ -1,4 +1,5 @@
 import prisma from "../../prismaClient.js";
+import { notificationService } from "../../services/notification.service.js";
 
 export const createOrder = async (req, res) => {
   const { items } = req.body;
@@ -41,6 +42,7 @@ export const createOrder = async (req, res) => {
           throw new Error(`Menu item not found: ${itemId}`);
         }
 
+        // Atomic inventory update - ensure we only decrement if enough quantity
         const updated = await tx.inventory.updateMany({
           where: {
             menuItemId: dish.id,
@@ -75,12 +77,19 @@ export const createOrder = async (req, res) => {
       return await tx.order.update({
         where: { id: order.id },
         data: { totalPrice: total },
-        include: { items: true }
+        include: { 
+          items: { include: { menuItem: true } },
+          session: { include: { table: true } }
+        }
       });
     });
 
+    // Broadcast new order to kitchen staff in real-time
+    notificationService.broadcastNewOrder(restaurantId, newOrder);
+
     res.status(201).json({ success: true, order: newOrder });
   } catch (error) {
+    console.error("Order creation error:", error);
     res.status(400).json({ success: false, error: error.message });
   }
 };
