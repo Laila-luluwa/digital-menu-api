@@ -1,6 +1,6 @@
 import express from "express";
 import { login, register, validateToken } from "../controllers/auth.controller.js";
-import { validateJWT } from "../middleware/validateJWT.js";
+import { validateCombinedAuth } from "../middleware/validateBasicAuth.js";
 
 const router = express.Router();
 
@@ -8,7 +8,7 @@ const router = express.Router();
 router.post("/login", login);
 router.post("/register", register);
 
-// Protected routes
-router.get("/validate", validateJWT, validateToken);
+// Protected routes (accepts JWT or Basic Auth)
+router.get("/validate", validateCombinedAuth, validateToken);
 
 export default router;

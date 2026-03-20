@@ -8,7 +8,7 @@ import restaurantRoutes from './src/routes/restaurants.routes.js';
 import menuRoutes from './src/routes/menu.routes.js';
 import tableRoutes from './src/routes/tables.routes.js';
 import userRoutes from './src/routes/users.routes.js';
-import { validateJWT } from './src/middleware/validateJWT.js';
+import { validateCombinedAuth } from './src/middleware/validateBasicAuth.js';
 
 dotenv.config();
 
@@ -29,16 +29,16 @@ app.use('/api/auth', authRoutes);
 app.use('/api/diner', dinerRoutes);
 
 // ============================================
-// PROTECTED ROUTES (требуют JWT)
+// PROTECTED ROUTES (требуют JWT или Basic Auth)
 // ============================================
 // Kitchen queue
-app.use('/api/kitchen', validateJWT, kitchenRoutes);
+app.use('/api/kitchen', validateCombinedAuth, kitchenRoutes);
 
 // Admin/Staff management routes
-app.use('/api', validateJWT, restaurantRoutes);
-app.use('/api', validateJWT, menuRoutes);
-app.use('/api', validateJWT, tableRoutes);
-app.use('/api', validateJWT, userRoutes);
+app.use('/api', validateCombinedAuth, restaurantRoutes);
+app.use('/api', validateCombinedAuth, menuRoutes);
+app.use('/api', validateCombinedAuth, tableRoutes);
+app.use('/api', validateCombinedAuth, userRoutes);
 
 // ============================================
 // HEALTH CHECK
