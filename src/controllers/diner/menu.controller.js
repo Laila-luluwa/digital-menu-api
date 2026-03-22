@@ -1,4 +1,4 @@
-import prisma from "../../prismaClient.js";
+import { menuRepository } from "../../repositories/menu.repository.js";
 
 export const getMenu = async (req, res) => {
   try {
@@ -10,25 +10,7 @@ export const getMenu = async (req, res) => {
           .filter(Boolean)
       : [];
 
-    const menu = await prisma.menuItem.findMany({
-      where: {
-        restaurantId: req.restaurantId,
-        inventory: { quantityAvailable: { gt: 0 } },
-        ...(dietList.length
-          ? {
-              tags: {
-                some: {
-                  tag: { name: { in: dietList } }
-                }
-              }
-            }
-          : {})
-      },
-      include: {
-        inventory: true,
-        tags: { include: { tag: true } }
-      }
-    });
+    const menu = await menuRepository.findAvailable(req.restaurantId, dietList);
 
     res.json(menu);
   } catch (error) {

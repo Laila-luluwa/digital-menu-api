@@ -1,5 +1,6 @@
-import prisma from "../../prismaClient.js";
+import { orderRepository } from "../../repositories/order.repository.js";
 import { notificationService } from "../../services/notification.service.js";
+import prisma from "../../prismaClient.js";
 
 export const createOrder = async (req, res) => {
   const { items } = req.body;

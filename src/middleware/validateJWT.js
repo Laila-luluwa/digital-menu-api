@@ -1,9 +1,7 @@
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
+import { getJwtSecret } from "../config/env.js";
 
-dotenv.config();
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-this";
+const JWT_SECRET = getJwtSecret();
 
 export const validateJWT = (req, res, next) => {
   const token = 

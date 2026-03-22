@@ -1,25 +1,11 @@
-import prisma from "../prismaClient.js";
+import { menuCategoryRepository } from "../repositories/menuCategory.repository.js";
 
 /**
  * Get all menu categories for a restaurant
  */
 export const getMenuCategories = async (req, res) => {
   try {
-    const categories = await prisma.menuCategory.findMany({
-      where: {
-        restaurantId: req.restaurantId
-      },
-      include: {
-        menuItems: {
-          include: {
-            inventory: true,
-            tags: { include: { tag: true } }
-          }
-        }
-      },
-      orderBy: { displayOrder: "asc" }
-    });
-
+    const categories = await menuCategoryRepository.findByRestaurant(req.restaurantId);
     res.json(categories);
   } catch (error) {
     console.error(error);
@@ -34,20 +20,7 @@ export const getMenuCategory = async (req, res) => {
   try {
     const categoryId = parseInt(req.params.id);
 
-    const category = await prisma.menuCategory.findFirst({
-      where: {
-        id: categoryId,
-        restaurantId: req.restaurantId
-      },
-      include: {
-        menuItems: {
-          include: {
-            inventory: true,
-            tags: { include: { tag: true } }
-          }
-        }
-      }
-    });
+    const category = await menuCategoryRepository.findById(categoryId, req.restaurantId);
 
     if (!category) {
       return res.status(404).json({ error: "Menu category not found" });
@@ -71,13 +44,11 @@ export const createMenuCategory = async (req, res) => {
       return res.status(400).json({ error: "Category name is required" });
     }
 
-    const category = await prisma.menuCategory.create({
-      data: {
-        name,
-        description,
-        displayOrder: Number(displayOrder),
-        restaurantId: req.restaurantId
-      }
+    const category = await menuCategoryRepository.create({
+      name,
+      description,
+      displayOrder: Number(displayOrder),
+      restaurantId: req.restaurantId
     });
 
     res.status(201).json(category);
@@ -100,33 +71,15 @@ export const updateMenuCategory = async (req, res) => {
     const categoryId = parseInt(req.params.id);
     const { name, description, displayOrder } = req.body;
 
-    const category = await prisma.menuCategory.updateMany({
-      where: {
-        id: categoryId,
-        restaurantId: req.restaurantId
-      },
-      data: {
-        ...(name ? { name } : {}),
-        ...(description !== undefined ? { description } : {}),
-        ...(displayOrder !== undefined ? { displayOrder: Number(displayOrder) } : {})
-      }
+    const updatedCategory = await menuCategoryRepository.update(categoryId, req.restaurantId, {
+      ...(name ? { name } : {}),
+      ...(description !== undefined ? { description } : {}),
+      ...(displayOrder !== undefined ? { displayOrder: Number(displayOrder) } : {})
     });
 
-    if (category.count === 0) {
+    if (!updatedCategory) {
       return res.status(404).json({ error: "Menu category not found" });
     }
-
-    const updatedCategory = await prisma.menuCategory.findUnique({
-      where: { id: categoryId },
-      include: {
-        menuItems: {
-          include: {
-            inventory: true,
-            tags: { include: { tag: true } }
-          }
-        }
-      }
-    });
 
     res.json(updatedCategory);
   } catch (error) {
@@ -148,14 +101,9 @@ export const deleteMenuCategory = async (req, res) => {
     const categoryId = parseInt(req.params.id);
 
     // Check if category has items
-    const count = await prisma.menuItem.count({
-      where: {
-        categoryId,
-        restaurantId: req.restaurantId
-      }
-    });
+    const itemCount = await menuCategoryRepository.countItems(categoryId, req.restaurantId);
 
-    if (count > 0) {
+    if (itemCount > 0) {
       return res
         .status(409)
         .json({ 
@@ -163,14 +111,9 @@ export const deleteMenuCategory = async (req, res) => {
         });
     }
 
-    const category = await prisma.menuCategory.deleteMany({
-      where: {
-        id: categoryId,
-        restaurantId: req.restaurantId
-      }
-    });
+    const deleted = await menuCategoryRepository.delete(categoryId, req.restaurantId);
 
-    if (category.count === 0) {
+    if (!deleted) {
       return res.status(404).json({ error: "Menu category not found" });
     }
 
@@ -194,28 +137,16 @@ export const reorderMenuCategories = async (req, res) => {
         .json({ error: "categoryOrders array is required" });
     }
 
-    const updates = categoryOrders.map((item) =>
-      prisma.menuCategory.updateMany({
-        where: {
-          id: item.id,
-          restaurantId: req.restaurantId
-        },
-        data: {
+    // Update display order for each category
+    const updated = await Promise.all(
+      categoryOrders.map((item) =>
+        menuCategoryRepository.update(item.id, req.restaurantId, {
           displayOrder: item.displayOrder
-        }
-      })
+        })
+      )
     );
 
-    await prisma.$transaction(updates);
-
-    const categories = await prisma.menuCategory.findMany({
-      where: {
-        restaurantId: req.restaurantId
-      },
-      orderBy: { displayOrder: "asc" }
-    });
-
-    res.json(categories);
+    res.json(updated);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to reorder menu categories" });

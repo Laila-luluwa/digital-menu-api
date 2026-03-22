@@ -10,6 +10,28 @@ export class NotificationService {
     this.kitchenSubscribers = new Map(); // restaurant -> set of kitchen staff connections
   }
 
+  broadcastToRestaurant(restaurantId, payload) {
+    const subscribers = this.kitchenSubscribers.get(restaurantId);
+    if (!subscribers || subscribers.size === 0) {
+      return false;
+    }
+
+    const message = JSON.stringify({
+      timestamp: new Date().toISOString(),
+      ...payload
+    });
+
+    let sentCount = 0;
+    subscribers.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(message);
+        sentCount++;
+      }
+    });
+
+    return sentCount > 0;
+  }
+
   /**
    * Register a kitchen staff WebSocket connection for a restaurant
    */
@@ -35,27 +57,17 @@ export class NotificationService {
    * Broadcast new order to kitchen staff
    */
   broadcastNewOrder(restaurantId, order) {
-    const subscribers = this.kitchenSubscribers.get(restaurantId);
-    if (!subscribers || subscribers.size === 0) {
+    const sent = this.broadcastToRestaurant(restaurantId, {
+      type: "NEW_ORDER",
+      data: order
+    });
+
+    if (!sent) {
       console.log(`No kitchen staff connected for restaurant ${restaurantId}`);
       return false;
     }
 
-    const message = JSON.stringify({
-      type: "NEW_ORDER",
-      timestamp: new Date().toISOString(),
-      data: order
-    });
-
-    let sentCount = 0;
-    subscribers.forEach((ws) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(message);
-        sentCount++;
-      }
-    });
-
-    console.log(`Broadcast new order #${order.id} to ${sentCount} kitchen staff`);
+    console.log(`Broadcast new order #${order.id} to kitchen staff`);
     return true;
   }
 
@@ -63,52 +75,36 @@ export class NotificationService {
    * Broadcast order status update
    */
   broadcastOrderStatusUpdate(restaurantId, orderId, newStatus) {
-    const subscribers = this.kitchenSubscribers.get(restaurantId);
-    if (!subscribers || subscribers.size === 0) {
-      return false;
-    }
-
-    const message = JSON.stringify({
+    return this.broadcastToRestaurant(restaurantId, {
       type: "ORDER_STATUS_UPDATE",
-      timestamp: new Date().toISOString(),
       orderId,
       status: newStatus
     });
-
-    let sentCount = 0;
-    subscribers.forEach((ws) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(message);
-        sentCount++;
-      }
-    });
-
-    return true;
   }
 
   /**
    * Broadcast inventory update
    */
   broadcastInventoryUpdate(restaurantId, menuItemId, newQuantity) {
-    const subscribers = this.kitchenSubscribers.get(restaurantId);
-    if (!subscribers || subscribers.size === 0) {
-      return false;
-    }
-
-    const message = JSON.stringify({
+    return this.broadcastToRestaurant(restaurantId, {
       type: "INVENTORY_UPDATE",
-      timestamp: new Date().toISOString(),
       menuItemId,
       quantityAvailable: newQuantity
     });
+  }
 
-    subscribers.forEach((ws) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(message);
-      }
+  broadcastMenuItemUpdated(restaurantId, menuItem) {
+    return this.broadcastToRestaurant(restaurantId, {
+      type: "MENU_ITEM_UPDATED",
+      data: menuItem
     });
+  }
 
-    return true;
+  broadcastMenuItemDeleted(restaurantId, menuItemId) {
+    return this.broadcastToRestaurant(restaurantId, {
+      type: "MENU_ITEM_DELETED",
+      menuItemId
+    });
   }
 
   /**

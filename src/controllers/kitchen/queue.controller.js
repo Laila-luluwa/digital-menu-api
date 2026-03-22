@@ -1,27 +1,46 @@
-import prisma from "../../prismaClient.js";
+import { orderRepository } from "../../repositories/order.repository.js";
 import { notificationService } from "../../services/notification.service.js";
-
-const ACTIVE_STATUSES = ["QUEUED", "COOKING", "READY"];
-const ALL_STATUSES = ["QUEUED", "COOKING", "READY", "SERVED"];
+import {
+  ORDER_STATUSES,
+  canTransitionOrderStatus,
+  parseKitchenStatusFilter
+} from "../../domain/orderStatus.js";
+import { paginationSchema } from "../../schema/validation.js";
 
 export const getActiveOrders = async (req, res) => {
   try {
-    const orders = await prisma.order.findMany({
-      where: {
-        restaurantId: req.restaurantId,
-        status: { in: ACTIVE_STATUSES }
-      },
-      include: {
-        items: { include: { menuItem: true } },
-        session: { include: { table: true } }
-      },
-      orderBy: { createdAt: "asc" }
-    });
+    const parsed = parseKitchenStatusFilter(req.query.status);
+    if (parsed.error) {
+      return res.status(400).json({ 
+        code: "INVALID_REQUEST",
+        error: parsed.error 
+      });
+    }
 
-    res.json(orders);
+    const pagination = paginationSchema.parse(req.query);
+    const { skip, take } = pagination;
+
+    const orders = await orderRepository.getActiveOrders(
+      req.restaurantId,
+      parsed.statuses,
+      skip,
+      take
+    );
+
+    res.json({
+      data: orders,
+      pagination: {
+        skip,
+        take,
+        total: orders.length
+      }
+    });
   } catch (error) {
     console.error("Failed to load kitchen orders:", error);
-    res.status(500).json({ error: "Failed to load kitchen orders" });
+    res.status(500).json({ 
+      code: "INTERNAL_ERROR",
+      error: "Failed to load kitchen orders" 
+    });
   }
 };
 
@@ -29,36 +48,40 @@ export const updateOrderStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   const nextStatus = String(status || "").toUpperCase();
+  const orderId = Number(id);
 
-  if (!ALL_STATUSES.includes(nextStatus)) {
-    return res.status(400).json({ error: "Invalid status. Valid statuses: QUEUED, COOKING, READY, SERVED" });
+  if (!Number.isFinite(orderId)) {
+    return res.status(400).json({ error: "Invalid order id" });
+  }
+
+  if (!ORDER_STATUSES.includes(nextStatus)) {
+    return res.status(400).json({
+      error: "Invalid status. Valid statuses: QUEUED, COOKING, READY, SERVED"
+    });
   }
 
   try {
-    const result = await prisma.order.updateMany({
-      where: {
-        id: Number(id),
-        restaurantId: req.restaurantId
-      },
-      data: { status: nextStatus }
-    });
-
-    if (result.count === 0) {
+    const currentOrder = await orderRepository.findById(orderId, req.restaurantId);
+    if (!currentOrder) {
       return res.status(404).json({ error: "Order not found" });
     }
 
-    const updatedOrder = await prisma.order.findUnique({
-      where: { id: Number(id) },
-      include: {
-        items: { include: { menuItem: true } },
-        session: { include: { table: true } }
-      }
-    });
+    if (!canTransitionOrderStatus(currentOrder.status, nextStatus)) {
+      return res.status(409).json({
+        error: `Invalid status transition: ${currentOrder.status} -> ${nextStatus}`
+      });
+    }
+
+    const updatedOrder = await orderRepository.updateStatus(orderId, req.restaurantId, nextStatus);
+
+    if (!updatedOrder) {
+      return res.status(404).json({ error: "Order not found" });
+    }
 
     // Broadcast order status update to kitchen staff
     notificationService.broadcastOrderStatusUpdate(
       req.restaurantId,
-      Number(id),
+      orderId,
       nextStatus
     );
 

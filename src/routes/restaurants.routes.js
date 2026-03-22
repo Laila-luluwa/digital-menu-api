@@ -1,31 +1,23 @@
 import express from "express";
-import prisma from "../prismaClient.js";
+import {
+  getAllRestaurants,
+  createRestaurant,
+  getRestaurantById,
+  updateRestaurant,
+  deleteRestaurant
+} from "../controllers/restaurant.controller.js";
+import { authorizeRole } from "../middleware/authorizeRole.js";
 
 const router = express.Router();
 
-// Получить все рестораны
-router.get("/restaurants", async (req, res) => {
-  try {
-    const restaurants = await prisma.restaurant.findMany();
-    res.json(restaurants);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch restaurants" });
-  }
-});
+router.get("/restaurants", authorizeRole("PLATFORM_ADMIN", "OWNER"), getAllRestaurants);
 
-// Создать ресторан
-router.post("/restaurants", async (req, res) => {
-  try {
-    const { name } = req.body;
+router.post("/restaurants", authorizeRole("PLATFORM_ADMIN"), createRestaurant);
 
-    const restaurant = await prisma.restaurant.create({
-      data: { name }
-    });
+router.get("/restaurants/:id", authorizeRole("PLATFORM_ADMIN", "OWNER"), getRestaurantById);
 
-    res.json(restaurant);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to create restaurant" });
-  }
-});
+router.patch("/restaurants/:id", authorizeRole("PLATFORM_ADMIN", "OWNER"), updateRestaurant);
+
+router.delete("/restaurants/:id", authorizeRole("PLATFORM_ADMIN", "OWNER"), deleteRestaurant);
 
 export default router;
