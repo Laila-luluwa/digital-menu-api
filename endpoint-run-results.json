@@ -1,0 +1,1356 @@
+{
+  "summary": {
+    "total": 58,
+    "ok": 54,
+    "failed": 4,
+    "failures": [
+      {
+        "label": "auth_register_platform_admin_attempt",
+        "status": 409,
+        "path": "/api/auth/register",
+        "response": {
+          "code": "DUPLICATE_RESOURCE",
+          "message": "Platform admin already exists",
+          "timestamp": "2026-03-22T15:44:05.058Z"
+        }
+      },
+      {
+        "label": "kitchen_ws_http_probe",
+        "status": 400,
+        "path": "/api/kitchen/ws",
+        "response": {
+          "code": "INVALID_METHOD",
+          "message": "WebSocket connection required. Use ws:// instead of http://"
+        }
+      },
+      {
+        "label": "menu_items_delete_main",
+        "status": 500,
+        "path": "/api/menu-items/33",
+        "response": {
+          "error": "Failed to delete menu item"
+        }
+      },
+      {
+        "label": "menu_categories_delete_main",
+        "status": 409,
+        "path": "/api/menu-categories/1",
+        "response": {
+          "error": "Cannot delete category with existing menu items. Remove or reassign items first."
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "label": "health_root",
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/",
+      "response": {
+        "message": "Digital Menu API is running",
+        "timestamp": "2026-03-22T15:44:05.001Z"
+      }
+    },
+    {
+      "label": "auth_register_platform_admin_attempt",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "status": 409,
+      "ok": false,
+      "command": "curl -X POST http://localhost:3000/api/auth/register -H \"x-platform-admin-bootstrap-key: change-me-bootstrap-key\" -d '{\"email\":\"platform.register.try@test.com\",\"name\":\"Platform Register Try\",\"password\":\"AdminPass123\",\"role\":\"PLATFORM_ADMIN\",\"restaurantId\":1}'",
+      "response": {
+        "code": "DUPLICATE_RESOURCE",
+        "message": "Platform admin already exists",
+        "timestamp": "2026-03-22T15:44:05.058Z"
+      }
+    },
+    {
+      "label": "auth_login_platform_admin",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/auth/login -d '{\"email\":\"platform.cmd@test.com\",\"password\":\"AdminPass123\"}'",
+      "response": {
+        "message": "Login successful",
+        "user": {
+          "id": 3,
+          "email": "platform.cmd@test.com",
+          "name": "Platform Cmd",
+          "role": "PLATFORM_ADMIN",
+          "restaurantId": 1
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImVtYWlsIjoicGxhdGZvcm0uY21kQHRlc3QuY29tIiwicm9sZSI6IlBMQVRGT1JNX0FETUlOIiwicmVzdGF1cmFudElkIjoxLCJpYXQiOjE3NzQxOTQyNDUsImV4cCI6MTc3NDI4MDY0NX0.OvufdIC8DjrM0IDcsetdO2NWdt-BaJT2L0kmhsXPOpI"
+      }
+    },
+    {
+      "label": "auth_validate_bearer",
+      "method": "GET",
+      "path": "/api/auth/validate",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/auth/validate -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImVtYWlsIjoicGxhdGZvcm0uY21kQHRlc3QuY29tIiwicm9sZSI6IlBMQVRGT1JNX0FETUlOIiwicmVzdGF1cmFudElkIjoxLCJpYXQiOjE3NzQxOTQyNDUsImV4cCI6MTc3NDI4MDY0NX0.OvufdIC8DjrM0IDcsetdO2NWdt-BaJT2L0kmhsXPOpI\"",
+      "response": {
+        "message": "Token is valid",
+        "user": {
+          "userId": 3,
+          "email": "platform.cmd@test.com",
+          "role": "PLATFORM_ADMIN",
+          "restaurantId": 1,
+          "iat": 1774194245,
+          "exp": 1774280645
+        }
+      }
+    },
+    {
+      "label": "restaurants_create",
+      "method": "POST",
+      "path": "/api/restaurants",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/restaurants -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImVtYWlsIjoicGxhdGZvcm0uY21kQHRlc3QuY29tIiwicm9sZSI6IlBMQVRGT1JNX0FETUlOIiwicmVzdGF1cmFudElkIjoxLCJpYXQiOjE3NzQxOTQyNDUsImV4cCI6MTc3NDI4MDY0NX0.OvufdIC8DjrM0IDcsetdO2NWdt-BaJT2L0kmhsXPOpI\" -d '{\"name\":\"Cmd Flow Restaurant\"}'",
+      "response": {
+        "id": 10,
+        "name": "Cmd Flow Restaurant",
+        "createdAt": "2026-03-22T15:44:05.248Z"
+      }
+    },
+    {
+      "label": "auth_register_owner",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/auth/register -d '{\"email\":\"owner.1774194245254@test.com\",\"name\":\"Owner User\",\"password\":\"OwnerPass123\",\"role\":\"OWNER\",\"restaurantId\":10}'",
+      "response": {
+        "message": "User registered successfully",
+        "user": {
+          "id": 4,
+          "email": "owner.1774194245254@test.com",
+          "name": "Owner User",
+          "role": "OWNER",
+          "restaurantId": 10
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ"
+      }
+    },
+    {
+      "label": "auth_register_manager",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/auth/register -d '{\"email\":\"manager.1774194245254@test.com\",\"name\":\"Manager User\",\"password\":\"OwnerPass123\",\"role\":\"MANAGER\",\"restaurantId\":10}'",
+      "response": {
+        "message": "User registered successfully",
+        "user": {
+          "id": 5,
+          "email": "manager.1774194245254@test.com",
+          "name": "Manager User",
+          "role": "MANAGER",
+          "restaurantId": 10
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImVtYWlsIjoibWFuYWdlci4xNzc0MTk0MjQ1MjU0QHRlc3QuY29tIiwicm9sZSI6Ik1BTkFHRVIiLCJyZXN0YXVyYW50SWQiOjEwLCJpYXQiOjE3NzQxOTQyNDUsImV4cCI6MTc3NDI4MDY0NX0.cHOvfi9moFmzHtVUAEfPk0TDSqA8sps_iEHAviZhQd4"
+      }
+    },
+    {
+      "label": "auth_register_kitchen",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/auth/register -d '{\"email\":\"kitchen.1774194245254@test.com\",\"name\":\"Kitchen User\",\"password\":\"OwnerPass123\",\"role\":\"KITCHEN\",\"restaurantId\":10}'",
+      "response": {
+        "message": "User registered successfully",
+        "user": {
+          "id": 6,
+          "email": "kitchen.1774194245254@test.com",
+          "name": "Kitchen User",
+          "role": "KITCHEN",
+          "restaurantId": 10
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsImVtYWlsIjoia2l0Y2hlbi4xNzc0MTk0MjQ1MjU0QHRlc3QuY29tIiwicm9sZSI6IktJVENIRU4iLCJyZXN0YXVyYW50SWQiOjEwLCJpYXQiOjE3NzQxOTQyNDUsImV4cCI6MTc3NDI4MDY0NX0.YRaUrKbtfOUhfS8CMZqthIkigDvjB7s0_uBlp-uUdAY"
+      }
+    },
+    {
+      "label": "auth_login_owner",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/auth/login -d '{\"email\":\"owner.1774194245254@test.com\",\"password\":\"OwnerPass123\"}'",
+      "response": {
+        "message": "Login successful",
+        "user": {
+          "id": 4,
+          "email": "owner.1774194245254@test.com",
+          "name": "Owner User",
+          "role": "OWNER",
+          "restaurantId": 10
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ"
+      }
+    },
+    {
+      "label": "auth_login_manager",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/auth/login -d '{\"email\":\"manager.1774194245254@test.com\",\"password\":\"OwnerPass123\"}'",
+      "response": {
+        "message": "Login successful",
+        "user": {
+          "id": 5,
+          "email": "manager.1774194245254@test.com",
+          "name": "Manager User",
+          "role": "MANAGER",
+          "restaurantId": 10
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImVtYWlsIjoibWFuYWdlci4xNzc0MTk0MjQ1MjU0QHRlc3QuY29tIiwicm9sZSI6Ik1BTkFHRVIiLCJyZXN0YXVyYW50SWQiOjEwLCJpYXQiOjE3NzQxOTQyNDYsImV4cCI6MTc3NDI4MDY0Nn0.y8Orc-9ANqqFeFAAb7XLRBfiZ35d62Ybc6c82FzTtNw"
+      }
+    },
+    {
+      "label": "auth_login_kitchen",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/auth/login -d '{\"email\":\"kitchen.1774194245254@test.com\",\"password\":\"OwnerPass123\"}'",
+      "response": {
+        "message": "Login successful",
+        "user": {
+          "id": 6,
+          "email": "kitchen.1774194245254@test.com",
+          "name": "Kitchen User",
+          "role": "KITCHEN",
+          "restaurantId": 10
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsImVtYWlsIjoia2l0Y2hlbi4xNzc0MTk0MjQ1MjU0QHRlc3QuY29tIiwicm9sZSI6IktJVENIRU4iLCJyZXN0YXVyYW50SWQiOjEwLCJpYXQiOjE3NzQxOTQyNDYsImV4cCI6MTc3NDI4MDY0Nn0.EZ3uCh6FksYpAEjS0v0JNgrV9-EJtTITUpK_DCDFwHc"
+      }
+    },
+    {
+      "label": "auth_validate_basic",
+      "method": "GET",
+      "path": "/api/auth/validate",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/auth/validate -H \"Authorization: Basic b3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbTpPd25lclBhc3MxMjM=\" -H \"x-restaurant-id: 10\"",
+      "response": {
+        "message": "Token is valid",
+        "user": {
+          "userId": 4,
+          "email": "owner.1774194245254@test.com",
+          "role": "OWNER",
+          "restaurantId": 10
+        }
+      }
+    },
+    {
+      "label": "restaurants_list_platform",
+      "method": "GET",
+      "path": "/api/restaurants",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/restaurants -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImVtYWlsIjoicGxhdGZvcm0uY21kQHRlc3QuY29tIiwicm9sZSI6IlBMQVRGT1JNX0FETUlOIiwicmVzdGF1cmFudElkIjoxLCJpYXQiOjE3NzQxOTQyNDUsImV4cCI6MTc3NDI4MDY0NX0.OvufdIC8DjrM0IDcsetdO2NWdt-BaJT2L0kmhsXPOpI\"",
+      "response": [
+        {
+          "id": 1,
+          "name": "Asanali's Digital Cafe",
+          "createdAt": "2026-03-22T15:22:12.515Z"
+        },
+        {
+          "id": 2,
+          "name": "Test Restaurant Atomic",
+          "createdAt": "2026-03-22T15:41:16.352Z"
+        },
+        {
+          "id": 3,
+          "name": "Restaurant 1",
+          "createdAt": "2026-03-22T15:41:16.468Z"
+        },
+        {
+          "id": 4,
+          "name": "Restaurant 2",
+          "createdAt": "2026-03-22T15:41:16.471Z"
+        },
+        {
+          "id": 5,
+          "name": "Test Restaurant Session",
+          "createdAt": "2026-03-22T15:41:16.487Z"
+        },
+        {
+          "id": 6,
+          "name": "Restaurant A",
+          "createdAt": "2026-03-22T15:41:16.509Z"
+        },
+        {
+          "id": 7,
+          "name": "Restaurant B",
+          "createdAt": "2026-03-22T15:41:16.510Z"
+        },
+        {
+          "id": 8,
+          "name": "Test Restaurant Order",
+          "createdAt": "2026-03-22T15:41:16.525Z"
+        },
+        {
+          "id": 9,
+          "name": "Test Pagination",
+          "createdAt": "2026-03-22T15:41:16.558Z"
+        },
+        {
+          "id": 10,
+          "name": "Cmd Flow Restaurant",
+          "createdAt": "2026-03-22T15:44:05.248Z"
+        }
+      ]
+    },
+    {
+      "label": "restaurants_get_by_id_owner",
+      "method": "GET",
+      "path": "/api/restaurants/10",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/restaurants/10 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "id": 10,
+        "name": "Cmd Flow Restaurant",
+        "createdAt": "2026-03-22T15:44:05.248Z"
+      }
+    },
+    {
+      "label": "restaurants_update_owner",
+      "method": "PATCH",
+      "path": "/api/restaurants/10",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X PATCH http://localhost:3000/api/restaurants/10 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"name\":\"Cmd Flow Restaurant Updated\"}'",
+      "response": {
+        "id": 10,
+        "name": "Cmd Flow Restaurant Updated",
+        "createdAt": "2026-03-22T15:44:05.248Z"
+      }
+    },
+    {
+      "label": "restaurants_create_for_delete",
+      "method": "POST",
+      "path": "/api/restaurants",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/restaurants -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImVtYWlsIjoicGxhdGZvcm0uY21kQHRlc3QuY29tIiwicm9sZSI6IlBMQVRGT1JNX0FETUlOIiwicmVzdGF1cmFudElkIjoxLCJpYXQiOjE3NzQxOTQyNDUsImV4cCI6MTc3NDI4MDY0NX0.OvufdIC8DjrM0IDcsetdO2NWdt-BaJT2L0kmhsXPOpI\" -d '{\"name\":\"Disposable Restaurant\"}'",
+      "response": {
+        "id": 11,
+        "name": "Disposable Restaurant",
+        "createdAt": "2026-03-22T15:44:06.388Z"
+      }
+    },
+    {
+      "label": "restaurants_delete_platform",
+      "method": "DELETE",
+      "path": "/api/restaurants/11",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X DELETE http://localhost:3000/api/restaurants/11 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImVtYWlsIjoicGxhdGZvcm0uY21kQHRlc3QuY29tIiwicm9sZSI6IlBMQVRGT1JNX0FETUlOIiwicmVzdGF1cmFudElkIjoxLCJpYXQiOjE3NzQxOTQyNDUsImV4cCI6MTc3NDI4MDY0NX0.OvufdIC8DjrM0IDcsetdO2NWdt-BaJT2L0kmhsXPOpI\"",
+      "response": {
+        "message": "Restaurant deleted successfully"
+      }
+    },
+    {
+      "label": "menu_categories_create_main",
+      "method": "POST",
+      "path": "/api/menu-categories",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/menu-categories -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"name\":\"Main Courses\",\"description\":\"Main\",\"displayOrder\":1}'",
+      "response": {
+        "id": 1,
+        "name": "Main Courses",
+        "restaurantId": 10,
+        "description": "Main",
+        "displayOrder": 1,
+        "createdAt": "2026-03-22T15:44:06.420Z"
+      }
+    },
+    {
+      "label": "menu_categories_create_delete",
+      "method": "POST",
+      "path": "/api/menu-categories",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/menu-categories -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"name\":\"ToDelete-1774194246427\",\"description\":\"Delete\",\"displayOrder\":2}'",
+      "response": {
+        "id": 2,
+        "name": "ToDelete-1774194246427",
+        "restaurantId": 10,
+        "description": "Delete",
+        "displayOrder": 2,
+        "createdAt": "2026-03-22T15:44:06.432Z"
+      }
+    },
+    {
+      "label": "menu_categories_list",
+      "method": "GET",
+      "path": "/api/menu-categories",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/menu-categories -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": [
+        {
+          "id": 1,
+          "name": "Main Courses",
+          "restaurantId": 10,
+          "description": "Main",
+          "displayOrder": 1,
+          "createdAt": "2026-03-22T15:44:06.420Z",
+          "menuItems": []
+        },
+        {
+          "id": 2,
+          "name": "ToDelete-1774194246427",
+          "restaurantId": 10,
+          "description": "Delete",
+          "displayOrder": 2,
+          "createdAt": "2026-03-22T15:44:06.432Z",
+          "menuItems": []
+        }
+      ]
+    },
+    {
+      "label": "menu_categories_get",
+      "method": "GET",
+      "path": "/api/menu-categories/1",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/menu-categories/1 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "id": 1,
+        "name": "Main Courses",
+        "restaurantId": 10,
+        "description": "Main",
+        "displayOrder": 1,
+        "createdAt": "2026-03-22T15:44:06.420Z",
+        "menuItems": []
+      }
+    },
+    {
+      "label": "menu_categories_update",
+      "method": "PATCH",
+      "path": "/api/menu-categories/1",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X PATCH http://localhost:3000/api/menu-categories/1 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"description\":\"Updated category\",\"displayOrder\":3}'",
+      "response": {
+        "id": 1,
+        "name": "Main Courses",
+        "restaurantId": 10,
+        "description": "Updated category",
+        "displayOrder": 3,
+        "createdAt": "2026-03-22T15:44:06.420Z",
+        "menuItems": []
+      }
+    },
+    {
+      "label": "menu_categories_reorder",
+      "method": "POST",
+      "path": "/api/menu-categories/reorder",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/menu-categories/reorder -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"categoryOrders\":[{\"id\":1,\"displayOrder\":1},{\"id\":2,\"displayOrder\":2}]}'",
+      "response": [
+        {
+          "id": 1,
+          "name": "Main Courses",
+          "restaurantId": 10,
+          "description": "Updated category",
+          "displayOrder": 1,
+          "createdAt": "2026-03-22T15:44:06.420Z",
+          "menuItems": []
+        },
+        {
+          "id": 2,
+          "name": "ToDelete-1774194246427",
+          "restaurantId": 10,
+          "description": "Delete",
+          "displayOrder": 2,
+          "createdAt": "2026-03-22T15:44:06.432Z",
+          "menuItems": []
+        }
+      ]
+    },
+    {
+      "label": "menu_categories_delete",
+      "method": "DELETE",
+      "path": "/api/menu-categories/2",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X DELETE http://localhost:3000/api/menu-categories/2 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "message": "Menu category deleted successfully"
+      }
+    },
+    {
+      "label": "menu_items_create_main",
+      "method": "POST",
+      "path": "/api/menu-items",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/menu-items -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"name\":\"Steak-1774194246738\",\"description\":\"Steak\",\"price\":25.5,\"quantity\":20,\"categoryId\":1}'",
+      "response": {
+        "id": 33,
+        "name": "Steak-1774194246738",
+        "description": "Steak",
+        "price": 25.5,
+        "quantity": 20,
+        "restaurantId": 10,
+        "categoryId": 1,
+        "inventory": {
+          "id": 33,
+          "menuItemId": 33,
+          "quantityAvailable": 20,
+          "updatedAt": "2026-03-22T15:44:06.743Z"
+        },
+        "category": {
+          "id": 1,
+          "name": "Main Courses",
+          "restaurantId": 10,
+          "description": "Updated category",
+          "displayOrder": 1,
+          "createdAt": "2026-03-22T15:44:06.420Z"
+        },
+        "tags": []
+      }
+    },
+    {
+      "label": "menu_items_create_delete",
+      "method": "POST",
+      "path": "/api/menu-items",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/menu-items -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"name\":\"Soup-1774194246772\",\"description\":\"Soup\",\"price\":8,\"quantity\":5,\"categoryId\":1}'",
+      "response": {
+        "id": 34,
+        "name": "Soup-1774194246772",
+        "description": "Soup",
+        "price": 8,
+        "quantity": 5,
+        "restaurantId": 10,
+        "categoryId": 1,
+        "inventory": {
+          "id": 34,
+          "menuItemId": 34,
+          "quantityAvailable": 5,
+          "updatedAt": "2026-03-22T15:44:06.778Z"
+        },
+        "category": {
+          "id": 1,
+          "name": "Main Courses",
+          "restaurantId": 10,
+          "description": "Updated category",
+          "displayOrder": 1,
+          "createdAt": "2026-03-22T15:44:06.420Z"
+        },
+        "tags": []
+      }
+    },
+    {
+      "label": "menu_items_list",
+      "method": "GET",
+      "path": "/api/menu-items?skip=0&take=10",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/menu-items?skip=0&take=10 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "data": [
+          {
+            "id": 33,
+            "name": "Steak-1774194246738",
+            "description": "Steak",
+            "price": 25.5,
+            "quantity": 20,
+            "restaurantId": 10,
+            "categoryId": 1,
+            "inventory": {
+              "id": 33,
+              "menuItemId": 33,
+              "quantityAvailable": 20,
+              "updatedAt": "2026-03-22T15:44:06.743Z"
+            },
+            "category": {
+              "id": 1,
+              "name": "Main Courses",
+              "restaurantId": 10,
+              "description": "Updated category",
+              "displayOrder": 1,
+              "createdAt": "2026-03-22T15:44:06.420Z"
+            },
+            "tags": []
+          },
+          {
+            "id": 34,
+            "name": "Soup-1774194246772",
+            "description": "Soup",
+            "price": 8,
+            "quantity": 5,
+            "restaurantId": 10,
+            "categoryId": 1,
+            "inventory": {
+              "id": 34,
+              "menuItemId": 34,
+              "quantityAvailable": 5,
+              "updatedAt": "2026-03-22T15:44:06.778Z"
+            },
+            "category": {
+              "id": 1,
+              "name": "Main Courses",
+              "restaurantId": 10,
+              "description": "Updated category",
+              "displayOrder": 1,
+              "createdAt": "2026-03-22T15:44:06.420Z"
+            },
+            "tags": []
+          }
+        ],
+        "pagination": {
+          "skip": 0,
+          "take": 10,
+          "total": 2
+        }
+      }
+    },
+    {
+      "label": "menu_items_get",
+      "method": "GET",
+      "path": "/api/menu-items/33",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/menu-items/33 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "id": 33,
+        "name": "Steak-1774194246738",
+        "description": "Steak",
+        "price": 25.5,
+        "quantity": 20,
+        "restaurantId": 10,
+        "categoryId": 1,
+        "inventory": {
+          "id": 33,
+          "menuItemId": 33,
+          "quantityAvailable": 20,
+          "updatedAt": "2026-03-22T15:44:06.743Z"
+        },
+        "category": {
+          "id": 1,
+          "name": "Main Courses",
+          "restaurantId": 10,
+          "description": "Updated category",
+          "displayOrder": 1,
+          "createdAt": "2026-03-22T15:44:06.420Z"
+        },
+        "tags": []
+      }
+    },
+    {
+      "label": "menu_items_update",
+      "method": "PATCH",
+      "path": "/api/menu-items/33",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X PATCH http://localhost:3000/api/menu-items/33 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"description\":\"Updated steak\",\"price\":27.5}'",
+      "response": {
+        "id": 33,
+        "name": "Steak-1774194246738",
+        "description": "Updated steak",
+        "price": 27.5,
+        "quantity": 20,
+        "restaurantId": 10,
+        "categoryId": 1,
+        "inventory": {
+          "id": 33,
+          "menuItemId": 33,
+          "quantityAvailable": 20,
+          "updatedAt": "2026-03-22T15:44:06.743Z"
+        },
+        "category": {
+          "id": 1,
+          "name": "Main Courses",
+          "restaurantId": 10,
+          "description": "Updated category",
+          "displayOrder": 1,
+          "createdAt": "2026-03-22T15:44:06.420Z"
+        },
+        "tags": []
+      }
+    },
+    {
+      "label": "menu_items_inventory_update",
+      "method": "PATCH",
+      "path": "/api/menu-items/33/inventory",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X PATCH http://localhost:3000/api/menu-items/33/inventory -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"quantity\":30}'",
+      "response": {
+        "id": 33,
+        "name": "Steak-1774194246738",
+        "description": "Updated steak",
+        "price": 27.5,
+        "quantity": 30,
+        "restaurantId": 10,
+        "categoryId": 1,
+        "inventory": {
+          "id": 33,
+          "menuItemId": 33,
+          "quantityAvailable": 30,
+          "updatedAt": "2026-03-22T15:44:06.867Z"
+        },
+        "category": {
+          "id": 1,
+          "name": "Main Courses",
+          "restaurantId": 10,
+          "description": "Updated category",
+          "displayOrder": 1,
+          "createdAt": "2026-03-22T15:44:06.420Z"
+        },
+        "tags": []
+      }
+    },
+    {
+      "label": "menu_items_decrement",
+      "method": "POST",
+      "path": "/api/menu-items/33/decrement",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/menu-items/33/decrement -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "id": 33,
+        "name": "Steak-1774194246738",
+        "description": "Updated steak",
+        "price": 27.5,
+        "quantity": 29,
+        "restaurantId": 10,
+        "categoryId": 1,
+        "inventory": {
+          "id": 33,
+          "menuItemId": 33,
+          "quantityAvailable": 29,
+          "updatedAt": "2026-03-22T15:44:06.889Z"
+        },
+        "category": {
+          "id": 1,
+          "name": "Main Courses",
+          "restaurantId": 10,
+          "description": "Updated category",
+          "displayOrder": 1,
+          "createdAt": "2026-03-22T15:44:06.420Z"
+        },
+        "tags": []
+      }
+    },
+    {
+      "label": "tags_create",
+      "method": "POST",
+      "path": "/api/tags",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/tags -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"name\":\"Spicy-1774194246896\"}'",
+      "response": {
+        "id": 1,
+        "name": "Spicy-1774194246896",
+        "restaurantId": 10
+      }
+    },
+    {
+      "label": "tags_list",
+      "method": "GET",
+      "path": "/api/tags",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/tags -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": [
+        {
+          "id": 1,
+          "name": "Spicy-1774194246896",
+          "restaurantId": 10
+        }
+      ]
+    },
+    {
+      "label": "menu_item_tags_add",
+      "method": "POST",
+      "path": "/api/menu-items/33/tags",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/menu-items/33/tags -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"tagIds\":[1]}'",
+      "response": {
+        "id": 33,
+        "name": "Steak-1774194246738",
+        "description": "Updated steak",
+        "price": 27.5,
+        "quantity": 29,
+        "restaurantId": 10,
+        "categoryId": 1,
+        "inventory": {
+          "id": 33,
+          "menuItemId": 33,
+          "quantityAvailable": 29,
+          "updatedAt": "2026-03-22T15:44:06.889Z"
+        },
+        "category": {
+          "id": 1,
+          "name": "Main Courses",
+          "restaurantId": 10,
+          "description": "Updated category",
+          "displayOrder": 1,
+          "createdAt": "2026-03-22T15:44:06.420Z"
+        },
+        "tags": [
+          {
+            "id": 1,
+            "menuItemId": 33,
+            "tagId": 1,
+            "tag": {
+              "id": 1,
+              "name": "Spicy-1774194246896",
+              "restaurantId": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "menu_item_tags_replace",
+      "method": "PATCH",
+      "path": "/api/menu-items/33/tags",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X PATCH http://localhost:3000/api/menu-items/33/tags -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"tagIds\":[1]}'",
+      "response": {
+        "id": 33,
+        "name": "Steak-1774194246738",
+        "description": "Updated steak",
+        "price": 27.5,
+        "quantity": 29,
+        "restaurantId": 10,
+        "categoryId": 1,
+        "inventory": {
+          "id": 33,
+          "menuItemId": 33,
+          "quantityAvailable": 29,
+          "updatedAt": "2026-03-22T15:44:06.889Z"
+        },
+        "category": {
+          "id": 1,
+          "name": "Main Courses",
+          "restaurantId": 10,
+          "description": "Updated category",
+          "displayOrder": 1,
+          "createdAt": "2026-03-22T15:44:06.420Z"
+        },
+        "tags": [
+          {
+            "id": 2,
+            "menuItemId": 33,
+            "tagId": 1,
+            "tag": {
+              "id": 1,
+              "name": "Spicy-1774194246896",
+              "restaurantId": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "tags_delete",
+      "method": "DELETE",
+      "path": "/api/tags/1",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X DELETE http://localhost:3000/api/tags/1 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "message": "Tag deleted successfully"
+      }
+    },
+    {
+      "label": "menu_items_delete",
+      "method": "DELETE",
+      "path": "/api/menu-items/34",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X DELETE http://localhost:3000/api/menu-items/34 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "message": "Menu item deleted successfully"
+      }
+    },
+    {
+      "label": "tables_create",
+      "method": "POST",
+      "path": "/api/tables",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/tables -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"tableCode\":\"CMD-T-1774194246994\"}'",
+      "response": {
+        "id": 6,
+        "tableCode": "CMD-T-1774194246994",
+        "restaurantId": 10,
+        "qrCode": {
+          "qrUrl": "data:image/png;base64,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",
+          "sessionUrl": "http://localhost:3000/api/diner/sessions/start?restaurant_id=10&table_code=CMD-T-1774194246994"
+        }
+      }
+    },
+    {
+      "label": "tables_bulk_create",
+      "method": "POST",
+      "path": "/api/tables/bulk",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/tables/bulk -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"tableCodes\":[\"CMD-B1-1774194247063\",\"CMD-B2-1774194247063\"]}'",
+      "response": [
+        {
+          "id": 8,
+          "tableCode": "CMD-B1-1774194247063",
+          "restaurantId": 10,
+          "qrCode": {
+            "qrUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAAAklEQVR4AewaftIAAAvNSURBVO3BgXUkMZYkwXA86q+yLwUA7ha5OVX8PWGGv1JVNcBKVdUQK1VVQ6xUVQ2xUlU1xEpV1RArVVVDrFRVDbFSVTXESlXVECtVVUOsVFUNsVJVNcRKVdUQP3kIyFRqPgHIiZpbQD5FzQ6QEzUnQE7U7AA5UXMCZEfNE0BuqTkBsqPmFpCp1NxaqaoaYqWqaoiVqqohVqqqhlipqhpipapqiJ/8B6j5NiBvArKj5kTNv0bNp6h5E5An1LxJzQ6QEzW31HwbkDetVFUNsVJVNcRKVdUQK1VVQ6xUVQ3xkw8C8iY1bwJyomYHyJvUnKh5E5ATILfUPAHklppbaj4FyImaHTWfAuRNaj5hpapqiJWqqiFWqqqGWKmqGmKlqmqIlaqqIX5SX6FmB8inqLkF5ATIE2p2gDyhZgfIE2o+AciJmkpWqqqGWKmqGmKlqmqIlaqqIVaqqoZYqaoa4if1f6LmBMgtNSdATtTsAHkCyKcAeROQHTVvAvIEkHpmpapqiJWqqiFWqqqGWKmqGmKlqmqIn3yQmn8NkBM1/xo1J0CeUHMLyC0gn6LmFpBPUTPRSlXVECtVVUOsVFUNsVJVNcRKVdUQK1VVQ/zkPwBI/b8B2VHzL1JzAmRHzRNqdoCcqDkBsqPmBMiJmk8A8q9ZqaoaYqWqaoiVqqohVqqqhlipqhpipapqiJ88pOa/CZBbQE7U7AA5UfNtQE7UnAA5UbMD5C9Qc0vNCZAdNbfU/DdZqaoaYqWqaoiVqqohVqqqhlipqhoCf+UBICdqdoD8BWreAuRT1JwA2VFzAuREzS0gJ2o+Bcib1OwAOVHzCUD+AjWfsFJVNcRKVdUQK1VVQ6xUVQ2xUlU1xEpV1RD4Ky8DckvNtwG5peYJIDtq3gTkRM0JkP8mak6A7Kg5ATKRmhMgJ2o+YaWqaoiVqqohVqqqhlipqhpipapqCPyVB4DcUnMC5JaaEyC31NwCcqLmBMiOmhMgJ2q+Dcib1DwB5E1qdoA8oeYTgJyoeROQW2purVRVDbFSVTXESlXVECtVVUOsVFUNsVJVNcRP/lFqPkHNCZBbQE7U3AJyouYEyI6aEzUnQE7U7AB5Qs0OkDepeROQbwNyoubbVqqqhlipqhpipapqiJWqqiFWqqqGWKmqGgJ/5QEgJ2p2gPxlam4BOVHzJiCfouYWkBM1bwLyJjUnQG6pOQGyo+YEyC01t4C8Sc2bVqqqhlipqhpipapqiJWqqiFWqqqGwF+p/y8gO2reBOQJNW8CsqPmCSC31DwB5E1qbgE5UXMLyI6aJ4DsqDkB8iY1t1aqqoZYqaoaYqWqaoiVqqohVqqqhlipqhriJ/8oIJ8A5Ak1nwDkU4C8CcgTanaAPAFkR80TQHbU3AJyouZEzQ6QEzXftlJVNcRKVdUQK1VVQ6xUVQ2xUlU1xEpV1RA/eQjIp6i5peYEyI6aEyC31HwKkB01TwC5peYEyImaHSAnam6pOQFyouZNar4NyJuA3FJza6WqaoiVqqohVqqqhlipqhpipapqiJ88pOZNQN4E5ETNDpATNTtA/gI1b1JzC8iJmhMgt4B8G5A3Abml5gTIiZpbQG6pedNKVdUQK1VVQ6xUVQ2xUlU1xEpV1RArVVVD4K88AOREzQ6QJ9S8CciOmjcBOVGzA+RNap4AckvNm4CcqPkUIJ+g5gTILTUnQHbUPAHklppbK1VVQ6xUVQ2xUlU1xEpV1RArVVVDrFRVDfGTfxSQEzWfoOaWmhMg36bmbUB21HwKkDepuQXkRM0OkDcBOVFzouYTVqqqhlipqhpipapqiJWqqiFWqqqG+MlDaj4FyC01bwLybWpOgLxJzaeo2QHyhJodIE+o2QFyAuREzb8GyI6aN61UVQ2xUlU1xEpV1RArVVVDrFRVDbFSVTUE/sofB+RNam4BuaXmBMiOmieA3FJzAmRHzQmQN6n5FCC31DwB5JaaW0BuqTkBcqLmE1aqqoZYqaoaYqWqaoiVqqohVqqqhlipqhriJw8B+RQ1O0BO1JwA2VFzouYWkBM1t4C8CciJmh0gb1OzA+REzS0gJ2pOgNwC8glATtScALml5gTILTW3VqqqhlipqhpipapqiJWqqiFWqqqGWKmqGgJ/5QEgb1LzJiDfpuYEyC01J0BuqTkBsqPmBMgTat4EZEfNCZATNTtAnlCzA+RT1OwAOVHzbStVVUOsVFUNsVJVNcRKVdUQK1VVQ/zkITUnQHbUnAB5k5pbQE7U7AA5AXKiZgfIX6DmLwNyomYHyImaEyA7aj5FzSeoeROQEzW3VqqqhlipqhpipapqiJWqqiFWqqqGWKmqGgJ/5QEgb1JzAuTb1LwJyI6aEyDfpuavA3JLzS0gJ2q+DcgtNU8AuaXm1kpV1RArVVVDrFRVDbFSVTXESlXVECtVVUPgr7wMyI6aNwE5UXMC5NvUvAnIjpongLxJzQmQN6nZAXKi5gRIJWpOgOyoedNKVdUQK1VVQ6xUVQ2xUlU1xEpV1RA/eQjIiZodIE+ouQXkLwNyS82Jmh0gJ2puqTkB8iY1J0BOgOyoOQFyouYWkBM1O0BO1OwAOVFzAmRHzRNqdoCcqLm1UlU1xEpV1RArVVVDrFRVDbFSVTXESlXVEPgrLwOyo+YJIDtqvg3IiZoTIDtq3gTkRM0tIH+dmh0gb1LzBJBbam4BeZOaW0BO1NxaqaoaYqWqaoiVqqohVqqqhlipqhpipapqCPyVB4DcUvMpQD5BzRNA3qTmFpATNTtATtQ8AeSWmhMgt9TcAnKi5gTIt6nZAfKEmk9YqaoaYqWqaoiVqqohVqqqhlipqhoCf+UBIG9S821ATtTcAnKiZgfIiZpbQJ5QcwvIm9ScADlRswPkTWpOgNxScwLkL1OzA+REza2VqqohVqqqhlipqhpipapqiJWqqiFWqqqG+Ml/gJpvA/Jtam6peQLIJwA5UXMC5E1q3qTmFpATNSdAbqnZAfImNSdAbql500pV1RArVVVDrFRVDbFSVTXESlXVECtVVUP85IOAnKi5BeREzS0gJ0DepOYWkBM1bwJyC8inADlR8yYgO2pOgJyo+auAnKj5tpWqqiFWqqqGWKmqGmKlqmqIlaqqIX7yQWpOgJyouQXkRM23AfnL1OwAOVHzL1KzA+REzQmQv0rNCZATNZ+wUlU1xEpV1RArVVVDrFRVDbFSVTXESlXVED95SM2b1NxS8ylq3gRkR80JkDcB+RQgb1JzAuRNQHbUfIqaNwHZAfIEkFtqbq1UVQ2xUlU1xEpV1RArVVVDrFRVDfGTh4BMpWZHzQmQW2pO1LwJyI6aJ9TcAvKEmm8DcqLmFpBPAHKi5paaEyAnaj5hpapqiJWqqiFWqqqGWKmqGmKlqmqIlaqqIX7yH6Dm24DcAvKXqTkBsgPkCSA7at4G5JaaW2pOgJwA2VFzouYWkFtq3gTkRM0tICdqbq1UVQ2xUlU1xEpV1RArVVVDrFRVDbFSVTXETz4IyJvU/GVAbql5k5o3ATlRcwLkRM0OkBMgJ2p2gDyh5haQEzW3gHwbkBM1n7BSVTXESlXVECtVVUOsVFUNsVJVNcRP6n9FzQ6QvwzIiZoTILeAPAHklppbap4AsqPmRM0tNSdAdtScADlR8yYgO2retFJVNcRKVdUQK1VVQ6xUVQ2xUlU1xEpV1RA/qf8TNZ8C5JaaEyAnat4E5ETNLSAnanaAfAqQW2puAXkCyJvUfMJKVdUQK1VVQ6xUVQ2xUlU1xEpV1RArVVVD/OSD1Pxlak6A7Kg5AXKiZgfIE2puqTkBckvNp6i5peYJILfU3AJyS80TQG6pOQGyo+ZNK1VVQ6xUVQ2xUlU1xEpV1RArVVVD4K88AGQqNTtATtS8CciOmieA7Kg5AXJLzV8HZEfNm4CcqDkBsqPmFpA3qfnLVqqqhlipqhpipapqiJWqqiFWqqqGWKmqGgJ/papqgJWqqiFWqqqGWKmqGmKlqmqIlaqqIVaqqoZYqaoaYqWqaoiVqqohVqqqhlipqhpipapqiP8B1sLOUa8fDiIAAAAASUVORK5CYII=",
+            "sessionUrl": "http://localhost:3000/api/diner/sessions/start?restaurant_id=10&table_code=CMD-B1-1774194247063"
+          }
+        },
+        {
+          "id": 7,
+          "tableCode": "CMD-B2-1774194247063",
+          "restaurantId": 10,
+          "qrCode": {
+            "qrUrl": "data:image/png;base64,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",
+            "sessionUrl": "http://localhost:3000/api/diner/sessions/start?restaurant_id=10&table_code=CMD-B2-1774194247063"
+          }
+        }
+      ]
+    },
+    {
+      "label": "tables_list",
+      "method": "GET",
+      "path": "/api/tables",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/tables -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": [
+        {
+          "id": 6,
+          "tableCode": "CMD-T-1774194246994",
+          "restaurantId": 10,
+          "sessions": []
+        },
+        {
+          "id": 7,
+          "tableCode": "CMD-B2-1774194247063",
+          "restaurantId": 10,
+          "sessions": []
+        },
+        {
+          "id": 8,
+          "tableCode": "CMD-B1-1774194247063",
+          "restaurantId": 10,
+          "sessions": []
+        }
+      ]
+    },
+    {
+      "label": "tables_get",
+      "method": "GET",
+      "path": "/api/tables/6",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/tables/6 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "id": 6,
+        "tableCode": "CMD-T-1774194246994",
+        "restaurantId": 10,
+        "sessions": [],
+        "qrCode": {
+          "qrUrl": "data:image/png;base64,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",
+          "sessionUrl": "http://localhost:3000/api/diner/sessions/start?restaurant_id=10&table_code=CMD-T-1774194246994"
+        }
+      }
+    },
+    {
+      "label": "tables_update",
+      "method": "PATCH",
+      "path": "/api/tables/6",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X PATCH http://localhost:3000/api/tables/6 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"tableCode\":\"CMD-T-1774194246994-UPD\"}'",
+      "response": {
+        "id": 6,
+        "tableCode": "CMD-T-1774194246994-UPD",
+        "restaurantId": 10,
+        "qrCode": {
+          "qrUrl": "data:image/png;base64,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",
+          "sessionUrl": "http://localhost:3000/api/diner/sessions/start?restaurant_id=10&table_code=CMD-T-1774194246994-UPD"
+        }
+      }
+    },
+    {
+      "label": "tables_create_for_delete",
+      "method": "POST",
+      "path": "/api/tables",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/tables -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"tableCode\":\"CMD-DEL-1774194247294\"}'",
+      "response": {
+        "id": 9,
+        "tableCode": "CMD-DEL-1774194247294",
+        "restaurantId": 10,
+        "qrCode": {
+          "qrUrl": "data:image/png;base64,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",
+          "sessionUrl": "http://localhost:3000/api/diner/sessions/start?restaurant_id=10&table_code=CMD-DEL-1774194247294"
+        }
+      }
+    },
+    {
+      "label": "tables_delete",
+      "method": "DELETE",
+      "path": "/api/tables/9",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X DELETE http://localhost:3000/api/tables/9 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "message": "Table deleted successfully"
+      }
+    },
+    {
+      "label": "users_create",
+      "method": "POST",
+      "path": "/api/users",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/users -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"email\":\"staff.1774194247376@test.com\",\"name\":\"Staff User\",\"role\":\"MANAGER\",\"password\":\"StaffPass123\"}'",
+      "response": {
+        "id": 7,
+        "email": "staff.1774194247376@test.com",
+        "name": "Staff User",
+        "role": "MANAGER",
+        "restaurantId": 10
+      }
+    },
+    {
+      "label": "users_list",
+      "method": "GET",
+      "path": "/api/users",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/users -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": [
+        {
+          "id": 4,
+          "email": "owner.1774194245254@test.com",
+          "name": "Owner User",
+          "role": "OWNER",
+          "restaurantId": 10,
+          "createdAt": "2026-03-22T15:44:05.369Z"
+        },
+        {
+          "id": 5,
+          "email": "manager.1774194245254@test.com",
+          "name": "Manager User",
+          "role": "MANAGER",
+          "restaurantId": 10,
+          "createdAt": "2026-03-22T15:44:05.556Z"
+        },
+        {
+          "id": 6,
+          "email": "kitchen.1774194245254@test.com",
+          "name": "Kitchen User",
+          "role": "KITCHEN",
+          "restaurantId": 10,
+          "createdAt": "2026-03-22T15:44:05.759Z"
+        },
+        {
+          "id": 7,
+          "email": "staff.1774194247376@test.com",
+          "name": "Staff User",
+          "role": "MANAGER",
+          "restaurantId": 10,
+          "createdAt": "2026-03-22T15:44:07.505Z"
+        }
+      ]
+    },
+    {
+      "label": "users_get",
+      "method": "GET",
+      "path": "/api/users/7",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/users/7 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "id": 7,
+        "email": "staff.1774194247376@test.com",
+        "name": "Staff User",
+        "role": "MANAGER",
+        "restaurantId": 10
+      }
+    },
+    {
+      "label": "users_update",
+      "method": "PATCH",
+      "path": "/api/users/7",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X PATCH http://localhost:3000/api/users/7 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\" -d '{\"name\":\"Staff User Updated\",\"role\":\"KITCHEN\"}'",
+      "response": {
+        "id": 7,
+        "email": "staff.1774194247376@test.com",
+        "name": "Staff User Updated",
+        "role": "KITCHEN",
+        "restaurantId": 10
+      }
+    },
+    {
+      "label": "users_delete",
+      "method": "DELETE",
+      "path": "/api/users/7",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X DELETE http://localhost:3000/api/users/7 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "message": "User deleted successfully"
+      }
+    },
+    {
+      "label": "tables_get_for_session",
+      "method": "GET",
+      "path": "/api/tables/6",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/tables/6 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "id": 6,
+        "tableCode": "CMD-T-1774194246994-UPD",
+        "restaurantId": 10,
+        "sessions": [],
+        "qrCode": {
+          "qrUrl": "data:image/png;base64,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",
+          "sessionUrl": "http://localhost:3000/api/diner/sessions/start?restaurant_id=10&table_code=CMD-T-1774194246994-UPD"
+        }
+      }
+    },
+    {
+      "label": "diner_session_start",
+      "method": "POST",
+      "path": "/api/diner/sessions/start",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/diner/sessions/start -H \"x-restaurant-id: 10\" -d '{\"tableCode\":\"CMD-T-1774194246994-UPD\",\"restaurant_id\":10}'",
+      "response": {
+        "token": "792753b9-ccef-43c5-86cf-7f1df871370a",
+        "expiresAt": "2026-03-22T17:44:07.651Z"
+      }
+    },
+    {
+      "label": "diner_menu",
+      "method": "GET",
+      "path": "/api/diner/menu?diet=nonexistent",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/diner/menu?diet=nonexistent -H \"x-session-token: 792753b9-ccef-43c5-86cf-7f1df871370a\"",
+      "response": []
+    },
+    {
+      "label": "diner_order_create",
+      "method": "POST",
+      "path": "/api/diner/orders",
+      "status": 201,
+      "ok": true,
+      "command": "curl -X POST http://localhost:3000/api/diner/orders -H \"x-session-token: 792753b9-ccef-43c5-86cf-7f1df871370a\" -d '{\"items\":[{\"menuItemId\":33,\"qty\":1}]}'",
+      "response": {
+        "success": true,
+        "order": {
+          "id": 2,
+          "tableCode": "CMD-T-1774194246994-UPD",
+          "restaurantId": 10,
+          "totalPrice": 27.5,
+          "status": "QUEUED",
+          "createdAt": "2026-03-22T15:44:07.693Z",
+          "sessionId": 3,
+          "items": [
+            {
+              "id": 1,
+              "orderId": 2,
+              "menuItemId": 33,
+              "quantity": 1,
+              "priceSnapshot": 27.5,
+              "menuItem": {
+                "id": 33,
+                "name": "Steak-1774194246738",
+                "description": "Updated steak",
+                "price": 27.5,
+                "quantity": 28,
+                "restaurantId": 10,
+                "categoryId": 1
+              }
+            }
+          ],
+          "session": {
+            "id": 3,
+            "tableId": 6,
+            "token": "792753b9-ccef-43c5-86cf-7f1df871370a",
+            "createdAt": "2026-03-22T15:44:07.653Z",
+            "expiresAt": "2026-03-22T17:44:07.651Z",
+            "status": "ACTIVE",
+            "table": {
+              "id": 6,
+              "tableCode": "CMD-T-1774194246994-UPD",
+              "restaurantId": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "kitchen_orders_list",
+      "method": "GET",
+      "path": "/api/kitchen/orders?status=new",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X GET http://localhost:3000/api/kitchen/orders?status=new -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsImVtYWlsIjoia2l0Y2hlbi4xNzc0MTk0MjQ1MjU0QHRlc3QuY29tIiwicm9sZSI6IktJVENIRU4iLCJyZXN0YXVyYW50SWQiOjEwLCJpYXQiOjE3NzQxOTQyNDYsImV4cCI6MTc3NDI4MDY0Nn0.EZ3uCh6FksYpAEjS0v0JNgrV9-EJtTITUpK_DCDFwHc\" -H \"x-restaurant-id: 10\"",
+      "response": {
+        "data": [
+          {
+            "id": 2,
+            "tableCode": "CMD-T-1774194246994-UPD",
+            "restaurantId": 10,
+            "totalPrice": 27.5,
+            "status": "QUEUED",
+            "createdAt": "2026-03-22T15:44:07.693Z",
+            "sessionId": 3,
+            "items": [
+              {
+                "id": 1,
+                "orderId": 2,
+                "menuItemId": 33,
+                "quantity": 1,
+                "priceSnapshot": 27.5,
+                "menuItem": {
+                  "id": 33,
+                  "name": "Steak-1774194246738",
+                  "description": "Updated steak",
+                  "price": 27.5,
+                  "quantity": 28,
+                  "restaurantId": 10,
+                  "categoryId": 1
+                }
+              }
+            ],
+            "session": {
+              "id": 3,
+              "tableId": 6,
+              "token": "792753b9-ccef-43c5-86cf-7f1df871370a",
+              "createdAt": "2026-03-22T15:44:07.653Z",
+              "expiresAt": "2026-03-22T17:44:07.651Z",
+              "status": "ACTIVE",
+              "table": {
+                "id": 6,
+                "tableCode": "CMD-T-1774194246994-UPD",
+                "restaurantId": 10
+              }
+            }
+          }
+        ],
+        "pagination": {
+          "skip": 0,
+          "take": 20,
+          "total": 1
+        }
+      }
+    },
+    {
+      "label": "kitchen_order_status_update",
+      "method": "PATCH",
+      "path": "/api/kitchen/orders/2/status",
+      "status": 200,
+      "ok": true,
+      "command": "curl -X PATCH http://localhost:3000/api/kitchen/orders/2/status -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsImVtYWlsIjoia2l0Y2hlbi4xNzc0MTk0MjQ1MjU0QHRlc3QuY29tIiwicm9sZSI6IktJVENIRU4iLCJyZXN0YXVyYW50SWQiOjEwLCJpYXQiOjE3NzQxOTQyNDYsImV4cCI6MTc3NDI4MDY0Nn0.EZ3uCh6FksYpAEjS0v0JNgrV9-EJtTITUpK_DCDFwHc\" -H \"x-restaurant-id: 10\" -d '{\"status\":\"COOKING\"}'",
+      "response": {
+        "success": true,
+        "message": "Order #2 status updated to COOKING",
+        "order": {
+          "id": 2,
+          "tableCode": "CMD-T-1774194246994-UPD",
+          "restaurantId": 10,
+          "totalPrice": 27.5,
+          "status": "COOKING",
+          "createdAt": "2026-03-22T15:44:07.693Z",
+          "sessionId": 3,
+          "items": [
+            {
+              "id": 1,
+              "orderId": 2,
+              "menuItemId": 33,
+              "quantity": 1,
+              "priceSnapshot": 27.5,
+              "menuItem": {
+                "id": 33,
+                "name": "Steak-1774194246738",
+                "description": "Updated steak",
+                "price": 27.5,
+                "quantity": 28,
+                "restaurantId": 10,
+                "categoryId": 1
+              }
+            }
+          ],
+          "session": {
+            "id": 3,
+            "tableId": 6,
+            "token": "792753b9-ccef-43c5-86cf-7f1df871370a",
+            "createdAt": "2026-03-22T15:44:07.653Z",
+            "expiresAt": "2026-03-22T17:44:07.651Z",
+            "status": "ACTIVE",
+            "table": {
+              "id": 6,
+              "tableCode": "CMD-T-1774194246994-UPD",
+              "restaurantId": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "kitchen_ws_http_probe",
+      "method": "GET",
+      "path": "/api/kitchen/ws",
+      "status": 400,
+      "ok": false,
+      "command": "curl -X GET http://localhost:3000/api/kitchen/ws -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsImVtYWlsIjoia2l0Y2hlbi4xNzc0MTk0MjQ1MjU0QHRlc3QuY29tIiwicm9sZSI6IktJVENIRU4iLCJyZXN0YXVyYW50SWQiOjEwLCJpYXQiOjE3NzQxOTQyNDYsImV4cCI6MTc3NDI4MDY0Nn0.EZ3uCh6FksYpAEjS0v0JNgrV9-EJtTITUpK_DCDFwHc\" -H \"x-restaurant-id: 10\"",
+      "response": {
+        "code": "INVALID_METHOD",
+        "message": "WebSocket connection required. Use ws:// instead of http://"
+      }
+    },
+    {
+      "label": "menu_items_delete_main",
+      "method": "DELETE",
+      "path": "/api/menu-items/33",
+      "status": 500,
+      "ok": false,
+      "command": "curl -X DELETE http://localhost:3000/api/menu-items/33 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "error": "Failed to delete menu item"
+      }
+    },
+    {
+      "label": "menu_categories_delete_main",
+      "method": "DELETE",
+      "path": "/api/menu-categories/1",
+      "status": 409,
+      "ok": false,
+      "command": "curl -X DELETE http://localhost:3000/api/menu-categories/1 -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsImVtYWlsIjoib3duZXIuMTc3NDE5NDI0NTI1NEB0ZXN0LmNvbSIsInJvbGUiOiJPV05FUiIsInJlc3RhdXJhbnRJZCI6MTAsImlhdCI6MTc3NDE5NDI0NSwiZXhwIjoxNzc0MjgwNjQ1fQ.Bq8LmGF5bI1MQHwMfE2gbFGsVkEdD1o6R0k5as_L6OQ\"",
+      "response": {
+        "error": "Cannot delete category with existing menu items. Remove or reassign items first."
+      }
+    }
+  ]
+}

@@ -8,6 +8,7 @@ datasource db {
 }
 
 enum Role {
+  PLATFORM_ADMIN
   OWNER
   MANAGER
   KITCHEN
@@ -54,7 +55,7 @@ model MenuCategory {
 }
 
 model MenuItem {
-  id           Int         @id @default(autoincrement())
+  id           Int         @id @default(autoincrement())  
   name         String
   description  String?
   price        Float
@@ -67,6 +68,8 @@ model MenuItem {
   orderItems   OrderItem[]
   inventory    Inventory?
   tags         MenuItemTag[]
+
+  @@unique([restaurantId, name])
 }
 
 model Table {
@@ -82,7 +85,7 @@ model Table {
 
 model User {
   id           Int      @id @default(autoincrement())
-  email        String   @unique
+  email        String
   name         String
   password     String
   role         Role
@@ -91,6 +94,8 @@ model User {
 
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   restaurantUsers RestaurantUser[]
+
+  @@unique([restaurantId, email])
 }
 
 model Order {

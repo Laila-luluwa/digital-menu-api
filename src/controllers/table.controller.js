@@ -1,4 +1,4 @@
-import prisma from "../prismaClient.js";
+import { tableRepository } from "../repositories/table.repository.js";
 import { generateTableQRCode } from "../services/qrCode.service.js";
 
 /**
@@ -6,19 +6,7 @@ import { generateTableQRCode } from "../services/qrCode.service.js";
  */
 export const getTables = async (req, res) => {
   try {
-    const tables = await prisma.table.findMany({
-      where: {
-        restaurantId: req.restaurantId
-      },
-      include: {
-        sessions: {
-          where: {
-            status: "ACTIVE"
-          }
-        }
-      }
-    });
-
+    const tables = await tableRepository.findByRestaurant(req.restaurantId);
     res.json(tables);
   } catch (error) {
     console.error(error);
@@ -33,19 +21,7 @@ export const getTableWithQR = async (req, res) => {
   try {
     const tableId = parseInt(req.params.id);
 
-    const table = await prisma.table.findFirst({
-      where: {
-        id: tableId,
-        restaurantId: req.restaurantId
-      },
-      include: {
-        sessions: {
-          where: { status: "ACTIVE" },
-          orderBy: { createdAt: "desc" },
-          take: 1
-        }
-      }
-    });
+    const table = await tableRepository.findById(tableId, req.restaurantId);
 
     if (!table) {
       return res.status(404).json({ error: "Table not found" });
@@ -78,12 +54,7 @@ export const createTable = async (req, res) => {
     }
 
     // Check if table code already exists for this restaurant
-    const existingTable = await prisma.table.findFirst({
-      where: {
-        restaurantId: req.restaurantId,
-        tableCode: String(tableCode)
-      }
-    });
+    const existingTable = await tableRepository.existsByCode(String(tableCode), req.restaurantId);
 
     if (existingTable) {
       return res
@@ -91,11 +62,9 @@ export const createTable = async (req, res) => {
         .json({ error: "Table code already exists for this restaurant" });
     }
 
-    const table = await prisma.table.create({
-      data: {
-        tableCode: String(tableCode),
-        restaurantId: req.restaurantId
-      }
+    const table = await tableRepository.create({
+      tableCode: String(tableCode),
+      restaurantId: req.restaurantId
     });
 
     // Generate QR code
@@ -119,22 +88,14 @@ export const updateTable = async (req, res) => {
     const tableId = parseInt(req.params.id);
     const { tableCode } = req.body;
 
-    const table = await prisma.table.updateMany({
-      where: {
-        id: tableId,
-        restaurantId: req.restaurantId
-      },
-      data: {
-        ...(tableCode ? { tableCode: String(tableCode) } : {})
-      }
-    });
-
-    if (table.count === 0) {
+    // Check if table exists
+    const existingTable = await tableRepository.findById(tableId, req.restaurantId);
+    if (!existingTable) {
       return res.status(404).json({ error: "Table not found" });
     }
 
-    const updatedTable = await prisma.table.findUnique({
-      where: { id: tableId }
+    const updatedTable = await tableRepository.update(tableId, {
+      ...(tableCode ? { tableCode: String(tableCode) } : {})
     });
 
     // Generate QR code for updated table
@@ -160,23 +121,17 @@ export const deleteTable = async (req, res) => {
   try {
     const tableId = parseInt(req.params.id);
 
-    const table = await prisma.table.deleteMany({
-      where: {
-        id: tableId,
-        restaurantId: req.restaurantId
-      }
-    });
-
-    if (table.count === 0) {
+    // Check if table exists
+    const existingTable = await tableRepository.findById(tableId, req.restaurantId);
+    if (!existingTable) {
       return res.status(404).json({ error: "Table not found" });
     }
 
+    await tableRepository.delete(tableId);
     res.json({ message: "Table deleted successfully" });
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({ error: "Failed to delete table" });
+    res.status(500).json({ error: "Failed to delete table" });
   }
 };
 
@@ -195,22 +150,15 @@ export const bulkCreateTables = async (req, res) => {
 
     const tables = await Promise.all(
       tableCodes.map(async (code) => {
-        const existingTable = await prisma.table.findFirst({
-          where: {
-            restaurantId: req.restaurantId,
-            tableCode: String(code)
-          }
-        });
+        const existingTable = await tableRepository.existsByCode(String(code), req.restaurantId);
 
         if (existingTable) {
           return null;
         }
 
-        const table = await prisma.table.create({
-          data: {
-            tableCode: String(code),
-            restaurantId: req.restaurantId
-          }
+        const table = await tableRepository.create({
+          tableCode: String(code),
+          restaurantId: req.restaurantId
         });
 
         const qrCode = await generateTableQRCode(req.restaurantId, table.tableCode);

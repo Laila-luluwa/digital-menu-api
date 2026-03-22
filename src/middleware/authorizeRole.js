@@ -20,16 +20,19 @@ export const authorizeRole = (...allowedRoles) => {
   };
 };
 
+export const isPlatformAdmin = (req) =>
+  Boolean(req.user && req.user.role === "PLATFORM_ADMIN");
+
 /**
  * Check if user is the restaurant owner or manager
  */
 export const authorizeOwnerOrManager = (req, res, next) => {
-  return authorizeRole("OWNER", "MANAGER")(req, res, next);
+  return authorizeRole("PLATFORM_ADMIN", "OWNER", "MANAGER")(req, res, next);
 };
 
 /**
  * Check if user is the restaurant owner
  */
 export const authorizeOwner = (req, res, next) => {
-  return authorizeRole("OWNER")(req, res, next);
+  return authorizeRole("PLATFORM_ADMIN", "OWNER")(req, res, next);
 };
