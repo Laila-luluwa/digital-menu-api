@@ -1,19 +1,28 @@
 export default function tenantMiddleware(req, res, next) {
-  const restaurantId = req.headers["x-restaurant-id"];
+  const tokenRestaurantId = Number(req.restaurantId || req.user?.restaurantId);
+  const headerRestaurantId = req.headers["x-restaurant-id"];
 
-  if (!restaurantId) {
-    return res.status(400).json({
-      error: "Restaurant ID is required in x-restaurant-id header"
+  if (!Number.isFinite(tokenRestaurantId)) {
+    return res.status(401).json({
+      error: "Authenticated restaurant context is missing"
     });
   }
 
-  const parsed = Number(restaurantId);
-  if (Number.isNaN(parsed)) {
-    return res.status(400).json({
-      error: "Restaurant ID must be a number"
-    });
+  if (headerRestaurantId !== undefined) {
+    const parsedHeaderRestaurantId = Number(headerRestaurantId);
+    if (!Number.isFinite(parsedHeaderRestaurantId)) {
+      return res.status(400).json({
+        error: "Restaurant ID in x-restaurant-id must be a number"
+      });
+    }
+
+    if (parsedHeaderRestaurantId !== tokenRestaurantId) {
+      return res.status(403).json({
+        error: "x-restaurant-id does not match authenticated restaurant"
+      });
+    }
   }
 
-  req.restaurantId = parsed;
+  req.restaurantId = tokenRestaurantId;
   next();
 }

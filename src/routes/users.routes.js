@@ -1,57 +1,31 @@
 import express from "express";
-import prisma from "../prismaClient.js";
+import {
+  getAllUsers,
+  createUser,
+  getUserById,
+  updateUser,
+  deleteUser
+} from "../controllers/user.controller.js";
+import { authorizeOwnerOrManager } from "../middleware/authorizeRole.js";
 
 const router = express.Router();
 
-router.post("/users", async (req, res) => {
-  try {
-    const { email, name, role } = req.body;
+// All user operations require OWNER or MANAGER role
+router.use(authorizeOwnerOrManager);
 
-    const user = await prisma.user.upsert({
-      where: { email },
-      update: { name, role, restaurantId: req.restaurantId },
-      create: {
-        email,
-        name,
-        role,
-        restaurantId: req.restaurantId
-      }
-    });
+// Get all users for restaurant
+router.get("/users", getAllUsers);
 
-    await prisma.restaurantUser.upsert({
-      where: {
-        restaurantId_userId: {
-          restaurantId: req.restaurantId,
-          userId: user.id
-        }
-      },
-      update: { role },
-      create: {
-        restaurantId: req.restaurantId,
-        userId: user.id,
-        role
-      }
-    });
+// Create new user
+router.post("/users", createUser);
 
-    res.json(user);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to create user" });
-  }
-});
+// Get user by ID
+router.get("/users/:id", getUserById);
 
-router.get("/users", async (req, res) => {
-  try {
-    const users = await prisma.restaurantUser.findMany({
-      where: { restaurantId: req.restaurantId },
-      include: { user: true }
-    });
+// Update user
+router.patch("/users/:id", updateUser);
 
-    res.json(users);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch users" });
-  }
-});
+// Delete user
+router.delete("/users/:id", deleteUser);
 
 export default router;

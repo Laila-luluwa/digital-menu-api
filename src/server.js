@@ -1,6 +1,8 @@
 import express from "express";
 import http from "http";
-import WebSocket from "ws";
+import cors from "cors";
+import { WebSocketServer } from "ws";
+import jwt from "jsonwebtoken";
 import dinerRoutes from "./routes/diner.routes.js";
 import kitchenRoutes from "./routes/kitchen.routes.js";
 import authRoutes from "./routes/auth.routes.js";
@@ -8,33 +10,42 @@ import restaurantRoutes from "./routes/restaurants.routes.js";
 import menuRoutes from "./routes/menu.routes.js";
 import tableRoutes from "./routes/tables.routes.js";
 import userRoutes from "./routes/users.routes.js";
-import { validateJWT } from "./middleware/validateJWT.js";
+import { validateCombinedAuth } from "./middleware/validateBasicAuth.js";
 import { notificationService } from "./services/notification.service.js";
 import { startSessionCleanupJob } from "./services/sessionExpiration.service.js";
+import { getJwtSecret } from "./config/env.js";
+import { loggerMiddleware } from "./utils/logger.js";
+import { apiLimiter, authLimiter, corsConfig } from "./config/security.js";
+import { errorHandler } from "./utils/errors.js";
 
 const app = express();
 const server = http.createServer(app);
+const JWT_SECRET = getJwtSecret();
 
 // Create WebSocket server
-const wss = new WebSocket.Server({ 
+const wss = new WebSocketServer({
   server,
   path: "/api/kitchen/ws"
 });
 
+// ========== MIDDLEWARE ==========
+app.use(cors(corsConfig));
 app.use(express.json());
+app.use(loggerMiddleware);
+app.use(apiLimiter);
 
-// Public routes (БЕЗ защиты - доступны всем)
-app.use("/api/auth", authRoutes);
+// ========== PUBLIC ROUTES (БЕЗ защиты) ==========
+app.use("/api/auth", authLimiter, authRoutes);
 
 // Diner routes (table-based, uses session tokens not JWT)
 app.use("/api/diner", dinerRoutes);
 
-// Protected routes that require JWT authentication
-app.use("/api/kitchen", validateJWT, kitchenRoutes);
-app.use("/api", validateJWT, restaurantRoutes);
-app.use("/api", validateJWT, menuRoutes);
-app.use("/api", validateJWT, tableRoutes);
-app.use("/api", validateJWT, userRoutes);
+// ========== PROTECTED ROUTES ==========
+app.use("/api/kitchen", validateCombinedAuth, kitchenRoutes);
+app.use("/api", validateCombinedAuth, restaurantRoutes);
+app.use("/api", validateCombinedAuth, menuRoutes);
+app.use("/api", validateCombinedAuth, tableRoutes);
+app.use("/api", validateCombinedAuth, userRoutes);
 
 app.get("/", (req, res) => {
   res.json({
@@ -45,25 +56,44 @@ app.get("/", (req, res) => {
 
 // ========== WEBSOCKET CONNECTION HANDLER ==========
 wss.on("connection", (ws, req) => {
-  const restaurantId = req.headers["x-restaurant-id"];
+  const restaurantIdHeader = req.headers["x-restaurant-id"];
   const authorization = req.headers.authorization;
 
-  console.log(`WebSocket connection from restaurant ${restaurantId}`);
-
-  // Validate connection - must have JWT token and restaurant ID
-  if (!authorization || !restaurantId) {
-    ws.close(1008, "Missing authorization or restaurant ID");
+  if (!authorization || !authorization.startsWith("Bearer ")) {
+    ws.close(1008, "Missing Bearer token");
     return;
   }
 
   try {
+    const token = authorization.slice(7);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const tokenRestaurantId = Number(decoded.restaurantId);
+
+    if (!Number.isFinite(tokenRestaurantId)) {
+      ws.close(1008, "Invalid token payload");
+      return;
+    }
+
+    if (restaurantIdHeader !== undefined) {
+      const parsedHeaderRestaurantId = Number(restaurantIdHeader);
+      if (
+        !Number.isFinite(parsedHeaderRestaurantId) ||
+        parsedHeaderRestaurantId !== tokenRestaurantId
+      ) {
+        ws.close(1008, "Restaurant mismatch");
+        return;
+      }
+    }
+
+    console.log(`WebSocket connection from restaurant ${tokenRestaurantId}`);
+
     // Register this connection for the restaurant
-    notificationService.registerKitchenConnection(Number(restaurantId), ws);
+    notificationService.registerKitchenConnection(tokenRestaurantId, ws);
 
     // Handle incoming messages (ping/heartbeat)
     ws.on("message", (message) => {
       try {
-        const data = JSON.parse(message);
+        const data = JSON.parse(message.toString());
         
         if (data.type === "ping") {
           ws.send(JSON.stringify({ type: "pong", timestamp: new Date().toISOString() }));
@@ -80,7 +110,7 @@ wss.on("connection", (ws, req) => {
 
     // Handle disconnection
     ws.on("close", () => {
-      console.log(`Kitchen staff disconnected from restaurant ${restaurantId}`);
+      console.log(`Kitchen staff disconnected from restaurant ${tokenRestaurantId}`);
     });
 
   } catch (error) {
@@ -88,6 +118,9 @@ wss.on("connection", (ws, req) => {
     ws.close(1011, "Server error");
   }
 });
+
+// ========== ERROR HANDLER ==========
+app.use(errorHandler);
 
 // ========== START SERVER AND SERVICES ==========
 

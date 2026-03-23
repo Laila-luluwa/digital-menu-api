@@ -1,55 +1,92 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { userRepository } from "../repositories/user.repository.js";
 import prisma from "../prismaClient.js";
-import dotenv from "dotenv";
+import { getJwtSecret } from "../config/env.js";
+import { registerSchema, loginSchema } from "../schema/validation.js";
+import { ERROR_CODES } from "../utils/errors.js";
 
-dotenv.config();
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-this";
+const JWT_SECRET = getJwtSecret();
+const PLATFORM_ADMIN_BOOTSTRAP_HEADER = "x-platform-admin-bootstrap-key";
+const PLATFORM_ADMIN_BOOTSTRAP_KEY =
+  process.env.PLATFORM_ADMIN_BOOTSTRAP_KEY || "";
 
 // Register a new user
-export const register = async (req, res) => {
+export const register = async (req, res, next) => {
   try {
-    const { email, name, password, role, restaurantId } = req.body;
+    // Validate request
+    const validated = registerSchema.parse(req.body);
+    const { email, name, password, role, restaurantId } = validated;
 
-    // Validate required fields
-    if (!email || !name || !password || !role || !restaurantId) {
-      return res.status(400).json({
-        error: "Missing required fields: email, name, password, role, restaurantId"
+    if (role === "PLATFORM_ADMIN") {
+      const providedBootstrapKey =
+        req.headers[PLATFORM_ADMIN_BOOTSTRAP_HEADER] ||
+        req.headers[PLATFORM_ADMIN_BOOTSTRAP_HEADER.toLowerCase()];
+
+      if (!PLATFORM_ADMIN_BOOTSTRAP_KEY) {
+        return res.status(403).json({
+          code: ERROR_CODES.FORBIDDEN.code,
+          message: "Platform admin registration is disabled",
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      if (providedBootstrapKey !== PLATFORM_ADMIN_BOOTSTRAP_KEY) {
+        return res.status(403).json({
+          code: ERROR_CODES.FORBIDDEN.code,
+          message: "Invalid bootstrap key for platform admin registration",
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      const platformAdminCount = await userRepository.countByRole("PLATFORM_ADMIN");
+      if (platformAdminCount > 0) {
+        return res.status(409).json({
+          code: ERROR_CODES.DUPLICATE_RESOURCE.code,
+          message: "Platform admin already exists",
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+
+    // Check if user already exists in this restaurant
+    const existingUser = await userRepository.findByEmail(email, restaurantId);
+
+    if (existingUser) {
+      return res.status(409).json({
+        code: ERROR_CODES.USER_ALREADY_EXISTS.code,
+        message: "User already exists in this restaurant",
+        timestamp: new Date().toISOString()
       });
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
+    const restaurantExists = await prisma.restaurant.findUnique({
+      where: { id: Number(restaurantId) },
+      select: { id: true }
     });
 
-    if (existingUser) {
-      return res.status(409).json({ error: "User already exists" });
+    if (!restaurantExists) {
+      return res.status(404).json({
+        code: ERROR_CODES.RESOURCE_NOT_FOUND.code,
+        message: "Restaurant not found",
+        timestamp: new Date().toISOString()
+      });
     }
 
-    // Hash password
+    // Hash password (bcrypt enforces complexity)
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name,
-        password: hashedPassword,
-        role,
-        restaurantId: Number(restaurantId)
-      }
+    const user = await userRepository.create({
+      email,
+      name,
+      password: hashedPassword,
+      role,
+      restaurantId: Number(restaurantId)
     });
 
     // Create RestaurantUser relationship
-    await prisma.restaurantUser.create({
-      data: {
-        restaurantId: Number(restaurantId),
-        userId: user.id,
-        role
-      }
-    });
+    await userRepository.createRestaurantUser(Number(restaurantId), user.id, role);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -70,37 +107,61 @@ export const register = async (req, res) => {
       token
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to register user" });
+    if (error.name === "ZodError") {
+      return res.status(400).json({
+        code: ERROR_CODES.VALIDATION_ERROR.code,
+        errors: error.issues.map((e) => ({
+          field: e.path.join("."),
+          message: e.message
+        })),
+        timestamp: new Date().toISOString()
+      });
+    }
+    if (error.code === "P2002") {
+      return res.status(409).json({
+        code: ERROR_CODES.USER_ALREADY_EXISTS.code,
+        message: "User already exists",
+        timestamp: new Date().toISOString()
+      });
+    }
+    if (error.code === "P2003") {
+      return res.status(404).json({
+        code: ERROR_CODES.RESOURCE_NOT_FOUND.code,
+        message: "Restaurant not found",
+        timestamp: new Date().toISOString()
+      });
+    }
+    next(error);
   }
 };
 
 // Login user
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    // Validate request
+    const validated = loginSchema.parse(req.body);
+    const { email, password } = validated;
 
-    // Validate required fields
-    if (!email || !password) {
-      return res.status(400).json({
-        error: "Email and password are required"
+    // Find user by email (globally for login)
+    const user = await userRepository.findByEmail(email);
+
+    if (!user || !user.password) {
+      return res.status(401).json({
+        code: ERROR_CODES.INVALID_CREDENTIALS.code,
+        message: "Invalid email or password",
+        timestamp: new Date().toISOString()
       });
-    }
-
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (!user) {
-      return res.status(401).json({ error: "Invalid email or password" });
     }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return res.status(401).json({
+        code: ERROR_CODES.INVALID_CREDENTIALS.code,
+        message: "Invalid email or password",
+        timestamp: new Date().toISOString()
+      });
     }
 
     // Generate JWT token
@@ -122,8 +183,17 @@ export const login = async (req, res) => {
       token
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to login" });
+    if (error.name === "ZodError") {
+      return res.status(400).json({
+        code: ERROR_CODES.VALIDATION_ERROR.code,
+        errors: error.issues.map((e) => ({
+          field: e.path.join("."),
+          message: e.message
+        })),
+        timestamp: new Date().toISOString()
+      });
+    }
+    next(error);
   }
 };
 
